@@ -1,0 +1,2037 @@
+<!-- ... --><script>
+        // Utility Helpers: Format Rupiah & Toast Notification
+        function formatRupiah(angka) {
+            return 'Rp ' + (Number(angka) || 0).toLocaleString('id-ID');
+        }
+
+        let toastTimeout;
+        function showToast(msg, isError = false) {
+            const box = document.getElementById('toast-box');
+            const msgEl = document.getElementById('toast-message');
+            const iconEl = document.getElementById('toast-icon');
+            if (!box || !msgEl || !iconEl) return;
+
+            msgEl.textContent = msg;
+            iconEl.className = isError
+                ? 'fa-solid fa-circle-exclamation text-rose-400 text-lg'
+                : 'fa-solid fa-circle-check text-emerald-400 text-lg';
+
+            box.classList.remove('translate-y-24', 'opacity-0');
+            box.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                box.classList.remove('translate-y-0', 'opacity-100');
+                box.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        // Default & Custom Data State
+        let defaultPrayerTimes = [
+            { id: 'imsak', name: 'Imsak', time: '04:18', icon: 'fa-cloud-moon' },
+            { id: 'subuh', name: 'Subuh', time: '04:28', icon: 'fa-sun-plant-wilt' },
+            { id: 'dzuhur', name: 'Dzuhur', time: '11:54', icon: 'fa-sun' },
+            { id: 'ashar', name: 'Ashar', time: '15:16', icon: 'fa-cloud-sun' },
+            { id: 'maghrib', name: 'Maghrib', time: '17:58', icon: 'fa-moon' },
+            { id: 'isya', name: 'Isya', time: '19:10', icon: 'fa-star-and-crescent' }
+        ];
+        let prayerTimesData = JSON.parse(JSON.stringify(defaultPrayerTimes));
+        let currentLocationName = "Serang, Banten";
+
+        let defaultKajianData = [
+            { title: "Fiqih Muamalah Kontemporer", ustadz: "Ustadz Dr. H. Salman Al-Farisi", category: "rutin", badge: "Kajian Rutin", schedule: "Setiap Ahad • Ba'da Subuh", location: "Ruang Utama Masjid" },
+            { title: "Tahsin Al-Qur'an & Tajwid", ustadz: "Ustadz H. Zulkifli, S.Pd.I", category: "tahsin", badge: "Tahsin & TPA", schedule: "Setiap Selasa • Ba'da Maghrib", location: "Serambi Masjid" },
+            { title: "Santunan Yatim & Dhuafa", ustadz: "Pengurus DKM Al-Ikhlas", category: "sosial", badge: "Sosial Umat", schedule: "Pekan ke-4 • 09:00 WIB", location: "Aula Serbaguna" }
+        ];
+        let kajianData = JSON.parse(JSON.stringify(defaultKajianData));
+        let activeKajianFilter = 'all';
+
+        let defaultFasilitasData = [
+            { title: "Ruang Utama Ber-AC", icon: "fa-snowflake", desc: "Karpet tebal bersih, pendingin udara merata, dan kapasitas hingga 800 jamaah." },
+            { title: "Ambulans Gratis", icon: "fa-van-shuttle", desc: "Layanan darurat penjemputan jenazah dan antar jemput pasien 24 jam untuk warga." },
+            { title: "Perpustakaan & TPA", icon: "fa-book-bookmark", desc: "Koleksi literatur Islam lengkap dan bimbingan belajar Al-Qur'an anak-anak." }
+        ];
+        let fasilitasData = JSON.parse(JSON.stringify(defaultFasilitasData));
+
+        let defaultGalleryFolders = [
+            { id: 'kegiatan', name: 'Kegiatan Masjid' },
+            { id: 'kajian', name: 'Kajian & Majelis' },
+            { id: 'pembangunan', name: 'Renovasi & Fasilitas' }
+        ];
+        let galleryFolders = JSON.parse(JSON.stringify(defaultGalleryFolders));
+        let activeGalleryFolder = 'all';
+
+        let defaultGalleryPhotos = [
+            { id: 1, folderId: 'kegiatan', title: 'Sholat Idul Adha Berjamaah di Lapangan Utama', date: '10 Jun 2026', imageUrl: 'https://images.unsplash.com/photo-1564769625905-50e93615e739?auto=format&fit=crop&w=600&q=80' },
+            { id: 2, folderId: 'kajian', title: 'Kajian Akbar Bulanan bersama Syeikh Internasional', date: '28 Mei 2026', imageUrl: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=600&q=80' },
+            { id: 3, folderId: 'pembangunan', title: 'Perbaikan Kubah Utama & Pengecatan Menara', date: '14 Apr 2026', imageUrl: 'https://images.unsplash.com/photo-1590076215730-ebd2a49d4245?auto=format&fit=crop&w=600&q=80' }
+        ];
+        let galleryPhotos = JSON.parse(JSON.stringify(defaultGalleryPhotos));
+
+        let defaultBaseSaldo = 38400000;
+        let baseSaldoKas = defaultBaseSaldo;
+        let defaultFinanceTransactions = [
+            { date: '15 Nov 2026', desc: 'Infaq Kotak Amal Sholat Jumat', category: 'Infaq Operasional', type: 'in', amount: 6450000 },
+            { date: '14 Nov 2026', desc: 'Tagihan Listrik & Air Masjid', category: 'Operasional', type: 'out', amount: 2350000 },
+            { date: '12 Nov 2026', desc: 'Santunan Yatim Bulanan', category: 'Sosial Umat', type: 'out', amount: 4250000 },
+            { date: '10 Nov 2026', desc: 'Wakaf Pembangunan Menara', category: 'Wakaf Pembangunan', type: 'in', amount: 15000000 }
+        ];
+        let financeTransactions = JSON.parse(JSON.stringify(defaultFinanceTransactions));
+
+        let defaultProfileData = {
+            history: "Masjid Jami' Al-Ikhlas didirikan pada tahun 1995 di atas tanah wakaf seluas 1.500 m². Tidak hanya berfungsi sebagai tempat ibadah sholat 5 waktu, masjid ini berkembang menjadi pusat pendidikan Al-Qur'an, pembinaan ekonomi syariah, dan pusat kegiatan sosial kemasyarakatan.",
+            vision: "Menjadi masjid teladan yang mandiri, memakmurkan dan dimakmurkan jamaah.",
+            mission: "Pendidikan umat berkualitas, transparansi keuangan, dan pelayanan sosial prima.",
+            board: [
+                { name: "Dr. H. M. Sutisna, M.Pd.", role: "Ketua Dewan Kemakmuran Masjid (DKM)", badge: "Periode 2024 - 2029" },
+                { name: "Drs. H. M. Fauzi, Ak.", role: "Bendahara Umum & Keuangan", badge: "Transparan & Amanah" },
+                { name: "Ust. H. Lukman Hakim, S.Ag.", role: "Bidang Dakwah & Peribadatan", badge: "Kajian Rutin" }
+            ]
+        };
+        let profileData = JSON.parse(JSON.stringify(defaultProfileData));
+
+        let defaultAnnouncementText = "Selamat datang di website resmi Masjid Jami' Al-Ikhlas. Mari ramaikan sholat berjamaah di masjid dan ikuti kajian rutin pekan ini. DKM membuka kesempatan berinfaq melalui QRIS dan transfer BSI.";
+        let currentAnnouncementText = defaultAnnouncementText;
+
+        let defaultDashboardTexts = {
+            badge: "Selamat Datang di Portal Resmi DKM Masjid",
+            title: "Pusat Ibadah, Dakwah & <span class=\"text-gold-400\">Pemberdayaan Umat</span>",
+            subtitle: "Menyelenggarakan kemakmuran masjid melalui pelayanan jamaah yang optimal, transparansi keuangan, kajian rutin mencerahkan, dan layanan sosial kemasyarakatan.",
+            btn1: "Lihat Jadwal Sholat",
+            btn2: "Agenda Kajian"
+        };
+        let dashboardTexts = JSON.parse(JSON.stringify(defaultDashboardTexts));
+
+        let defaultBankData = {
+            bankName: "BSI (Bank Syariah Indonesia)",
+            accNumber: "7123-4567-89",
+            accHolder: "Masjid Al-Ikhlas",
+            qrisUrl: null
+        };
+        let bankData = JSON.parse(JSON.stringify(defaultBankData));
+        let tempQrisDataUrl = null;
+
+        let defaultKontakData = {
+            desc: "Punya pertanyaan seputar jadwal kajian, permohonan penggunaan aula masjid, layanan ambulans jenazah, atau konsultasi zakat? Silakan hubungi kami melalui informasi di bawah ini.",
+            address: "Jl. KH. Hasyim Ashari No. 45, Kel. Cipare, Kec. Serang, Kota Serang, Banten 42117",
+            wa: "+62 812-3456-7890 (Ust. H. Lukman)",
+            email: "sekretariat@masjidalikhlas-serang.or.id"
+        };
+        let kontakData = JSON.parse(JSON.stringify(defaultKontakData));
+
+        function applyBankAndQrisToUI() {
+            const bankLabel = document.getElementById('infaq-bank-label');
+            const rekText = document.getElementById('infaq-rekening-text');
+            if (bankLabel) bankLabel.textContent = `Transfer Rekening ${bankData.bankName}`;
+            if (rekText) rekText.textContent = `${bankData.accNumber} (${bankData.bankName} a.n. ${bankData.accHolder})`;
+
+            const qrisImg = document.getElementById('preview-qris-img');
+            const qrisIcon = document.getElementById('preview-qris-icon');
+            if (bankData.qrisUrl) {
+                if (qrisImg) { qrisImg.src = bankData.qrisUrl; qrisImg.classList.remove('hidden'); }
+                if (qrisIcon) qrisIcon.classList.add('hidden');
+            } else {
+                if (qrisImg) qrisImg.classList.add('hidden');
+                if (qrisIcon) qrisIcon.classList.remove('hidden');
+            }
+
+            const inputBankName = document.getElementById('input-bank-name');
+            const inputBankAcc = document.getElementById('input-bank-acc');
+            const inputBankHolder = document.getElementById('input-bank-holder');
+            if (inputBankName) inputBankName.value = bankData.bankName;
+            if (inputBankAcc) inputBankAcc.value = bankData.accNumber;
+            if (inputBankHolder) inputBankHolder.value = bankData.accHolder;
+        }
+
+        // Kamus Multi-Bahasa Lengkap (Global 19 Bahasa)
+        const translations = {
+            id: {
+                dir: 'ltr',
+                annBadge: 'PENGUMUMAN DKM:',
+                annEdit: 'Edit',
+                annText: "Selamat datang di website resmi Masjid Jami' Al-Ikhlas. Mari ramaikan sholat berjamaah di masjid dan ikuti kajian rutin pekan ini. DKM membuka kesempatan berinfaq melalui QRIS dan transfer BSI.",
+                devText: "Aplikasi ini dibuat oleh simple Program, email:rokhmatullohbanten@gmail.com dan WA : 085946982520, silahkan infaq seikhlasnya atas pembuatan website dengan no rek bank BSI : 1406197774 atas nama rokhmatulloh, semoga bermanfaat",
+                devBadge: "Info Pengembang",
+                nav: { beranda: 'Beranda', jadwal: 'Jadwal Sholat', kajian: 'Kajian & Agenda', galeri: 'Galeri & Folder', profil: 'Profil DKM', fasilitas: 'Fasilitas', keuangan: 'Kas Masjid', kontak: 'Kontak' },
+                btns: {
+                    guide: 'Panduan', editText: 'Edit Kalimat', logo: 'Ganti Logo', infaq: 'Infaq Digital',
+                    editJadwal: 'Cari Lokasi / Edit Jadwal Sholat', editKontak: 'Edit Kontak & Alamat',
+                    manageFolder: 'Kelola Folder', uploadPhoto: 'Unggah Dokumentasi', editProfile: 'Edit Profil DKM',
+                    editFasilitas: 'Tambah / Edit Fasilitas', inputKas: 'Input / Edit Kas', dlTemplate: 'Download Template',
+                    ulTemplate: 'Upload Template', printPdf: 'Cetak PDF', sendReport: 'Kirim Laporan'
+                },
+                hero: {
+                    badge: "Selamat Datang di Portal Resmi DKM Masjid",
+                    title: "Pusat Ibadah, Dakwah & <span class=\"text-gold-400\">Pemberdayaan Umat</span>",
+                    subtitle: "Menyelenggarakan kemakmuran masjid melalui pelayanan jamaah yang optimal, transparansi keuangan, kajian rutin mencerahkan, dan layanan sosial kemasyarakatan.",
+                    btn1: "Lihat Jadwal Sholat",
+                    btn2: "Agenda Kajian",
+                    saldoLabel: "Saldo Kas Masjid Aktif",
+                    liveBadge: "Hitung Mundur Langsung",
+                    nextPrayerLabel: "Waktu Sholat Berikutnya",
+                    countdownLabel: "Menuju Waktu Sholat",
+                    khatibLabel: "Petugas Khutbah Jumat:",
+                    imamLabel: "Imam Rawatib Hari Ini:"
+                },
+                stats: {
+                    jamaah: "Jamaah Aktif", kajianVal: "24 Kajian", kajian: "Agenda Bulanan",
+                    santriVal: "140 Santri", santri: "Binaan TPA Al-Ikhlas", yatimVal: "85 KK", yatim: "Penerima Santunan"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Subuh', dzuhur: 'Dzuhur', ashar: 'Ashar', maghrib: 'Maghrib', isya: 'Isya', activeBadge: 'Aktif' },
+                filters: { all: 'Semua', rutin: 'Kajian Rutin', tahsin: 'Tahsin & TPA', sosial: 'Sosial Umat', allFolder: 'Semua Folder' },
+                sections: {
+                    jadwalBadge: "Waktu Ibadah Harian", jadwalTitle: "Jadwal Sholat & Imsakiyah", jadwalDesc: "Waktu sholat akurat untuk wilayah",
+                    kajianBadge: "Syiar Islam", kajianTitle: "Jadwal Kajian & Agenda Masjid", kajianDesc: "Mari ikuti majelis ilmu untuk menambah wawasan keislaman kita.",
+                    galeriBadge: "Arsip & Dokumentasi", galeriTitle: "Galeri Foto & Folder Kegiatan", galeriDesc: "Dokumentasi kegiatan, pembangunan, dan majelis yang tersimpan dalam folder kategori.",
+                    profilBadge: "Tentang Kami", profilTitle: "Profil & Kepengurusan DKM",
+                    visionLabel: "Visi Utama", missionLabel: "Misi Kami", boardTitle: "Susunan Pengurus DKM",
+                    fasilitasBadge: "Fasilitas Umat", fasilitasTitle: "Sarana & Prasarana Masjid", fasilitasDesc: "Kami menyediakan fasilitas terbaik untuk kenyamanan ibadah dan kegiatan jamaah.",
+                    fasilitasAvail: "Tersedia untuk Jamaah",
+                    keuanganBadge: "Akuntabilitas & Amanah", keuanganTitle: "Transparansi Laporan Kas Masjid", keuanganDesc: "Laporan keuangan kas masjid diperbarui secara berkala sebagai wujud amanah kepada umat.",
+                    kontakBadge: "Hubungi Kami", kontakTitle: "Sekretariat & Layanan Jamaah",
+                    kontakDesc: "Punya pertanyaan seputar jadwal kajian, permohonan penggunaan aula masjid, layanan ambulans jenazah, atau konsultasi zakat? Silakan hubungi kami melalui informasi di bawah ini.",
+                    addressLabel: "Alamat Lengkap", waLabel: "WhatsApp DKM", emailLabel: "Email Resmi"
+                },
+                finance: {
+                    saldoTitle: "Total Saldo Kas Aktif", saldoSub: "Terakhir diperbarui hari ini",
+                    masukTitle: "Total Pemasukan Bulan Ini", masukSub: "Infaq & Wakaf Jamaah",
+                    keluarTitle: "Total Pengeluaran Bulan Ini", keluarSub: "Operasional & Sosial",
+                    tableTitle: "Mutasi Transaksi Keuangan Terakhir", tableSub: "Transparansi DKM Al-Ikhlas",
+                    thTanggal: "Tanggal", thKeterangan: "Keterangan Transaksi", thKategori: "Kategori", thNominal: "Nominal (Rp)", thAksi: "Aksi"
+                },
+                toastMsg: "Bahasa diubah ke Bahasa Indonesia."
+            },
+            en: {
+                dir: 'ltr',
+                annBadge: 'MOSQUE ANNOUNCEMENT:',
+                annEdit: 'Edit',
+                annText: "Welcome to the official website of Masjid Jami' Al-Ikhlas. Join our congregational prayers and weekly Islamic lectures. Digital donations are open via QRIS and BSI bank transfer.",
+                devText: "This application was created by simple Program, email: rokhmatullohbanten@gmail.com and WA: 085946982520, please donate voluntarily for the website creation with BSI bank account: 1406197774 under the name Rokhmatulloh, may it be useful.",
+                devBadge: "Developer Info",
+                nav: { beranda: 'Home', jadwal: 'Prayer Times', kajian: 'Lectures & Events', galeri: 'Gallery & Folders', profil: 'Board Profile', fasilitas: 'Facilities', keuangan: 'Treasury', kontak: 'Contact' },
+                btns: {
+                    guide: 'Guide', editText: 'Edit Hero Text', logo: 'Change Logo', infaq: 'Digital Donation',
+                    editJadwal: 'Search Location / Edit Times', editKontak: 'Edit Contact & Address',
+                    manageFolder: 'Manage Folders', uploadPhoto: 'Upload Photo', editProfile: 'Edit Board Profile',
+                    editFasilitas: 'Add / Edit Facilities', inputKas: 'Add / Edit Entry', dlTemplate: 'Download Template',
+                    ulTemplate: 'Upload Template', printPdf: 'Export PDF', sendReport: 'Share Report'
+                },
+                hero: {
+                    badge: "Welcome to the Official Mosque Portal",
+                    title: "Center of Worship, Da'wah & <span class=\"text-gold-400\">Community Empowerment</span>",
+                    subtitle: "Fostering mosque prosperity through optimal congregation services, financial transparency, enlightening regular lectures, and social welfare programs.",
+                    btn1: "View Prayer Times",
+                    btn2: "Lecture Schedule",
+                    saldoLabel: "Active Mosque Treasury Balance",
+                    liveBadge: "Live Countdown",
+                    nextPrayerLabel: "Next Prayer Time",
+                    countdownLabel: "Time Until Next Prayer",
+                    khatibLabel: "Friday Khutbah Preacher:",
+                    imamLabel: "Today's Rawatib Imam:"
+                },
+                stats: {
+                    jamaah: "Active Congregants", kajianVal: "24 Lectures", kajian: "Monthly Programs",
+                    santriVal: "140 Students", santri: "TPA Al-Ikhlas Youth", yatimVal: "85 Families", yatim: "Zakat & Aid Recipients"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Next' },
+                filters: { all: 'All', rutin: 'Regular Lectures', tahsin: 'Tahsin & TPA', sosial: 'Social Welfare', allFolder: 'All Folders' },
+                sections: {
+                    jadwalBadge: "Daily Worship Times", jadwalTitle: "Prayer & Imsakiyah Schedule", jadwalDesc: "Accurate prayer times for",
+                    kajianBadge: "Islamic Outreach", kajianTitle: "Lectures & Mosque Agenda", kajianDesc: "Join our knowledge gatherings to enrich our Islamic understanding.",
+                    galeriBadge: "Archives & Documentation", galeriTitle: "Photo Gallery & Activity Folders", galeriDesc: "Documentation of mosque activities, construction, and events organized in folders.",
+                    profilBadge: "About Us", profilTitle: "Mosque Board Profile & Management",
+                    visionLabel: "Main Vision", missionLabel: "Our Mission", boardTitle: "Mosque Executive Board",
+                    fasilitasBadge: "Congregation Facilities", fasilitasTitle: "Mosque Facilities & Infrastructure", fasilitasDesc: "We provide the best facilities for the comfort of worship and congregation activities.",
+                    fasilitasAvail: "Available for Congregation",
+                    keuanganBadge: "Accountability & Trust", keuanganTitle: "Mosque Treasury Financial Report", keuanganDesc: "Financial reports are updated regularly as a form of trust and transparency to the community.",
+                    kontakBadge: "Contact Us", kontakTitle: "Secretariat & Congregation Services",
+                    kontakDesc: "Have questions about lecture schedules, hall reservations, ambulance services, or zakat consultation? Contact us using the details below.",
+                    addressLabel: "Full Address", waLabel: "Mosque WhatsApp", emailLabel: "Official Email"
+                },
+                finance: {
+                    saldoTitle: "Total Active Treasury Balance", saldoSub: "Last updated today",
+                    masukTitle: "Total Income This Month", masukSub: "Congregation Infaq & Waqf",
+                    keluarTitle: "Total Expenses This Month", keluarSub: "Operations & Social Aid",
+                    tableTitle: "Recent Financial Transactions", tableSub: "DKM Al-Ikhlas Transparency",
+                    thTanggal: "Date", thKeterangan: "Transaction Description", thKategori: "Category", thNominal: "Amount (Rp)", thAksi: "Action"
+                },
+                toastMsg: "Language switched to English."
+            },
+            au: {
+                dir: 'ltr',
+                annBadge: 'MOSQUE NOTICE:',
+                annEdit: 'Edit',
+                annText: "G'day and welcome to Masjid Jami' Al-Ikhlas. Join us for prayers and weekly gatherings. Donations accepted via QRIS and BSI transfer.",
+                devText: "App created by simple Program, email: rokhmatullohbanten@gmail.com, WA: 085946982520. Voluntary donations to BSI account: 1406197774 (Rokhmatulloh).",
+                devBadge: "Developer Info",
+                nav: { beranda: 'Home', jadwal: 'Prayer Times', kajian: 'Lectures & Events', galeri: 'Gallery & Folders', profil: 'Board Profile', fasilitas: 'Facilities', keuangan: 'Treasury', kontak: 'Contact' },
+                btns: {
+                    guide: 'Guide', editText: 'Edit Text', logo: 'Change Logo', infaq: 'Digital Donation',
+                    editJadwal: 'Search Location / Edit Times', editKontak: 'Edit Contact & Address',
+                    manageFolder: 'Manage Folders', uploadPhoto: 'Upload Photo', editProfile: 'Edit Board Profile',
+                    editFasilitas: 'Add / Edit Facilities', inputKas: 'Add / Edit Entry', dlTemplate: 'Download Template',
+                    ulTemplate: 'Upload Template', printPdf: 'Export PDF', sendReport: 'Share Report'
+                },
+                hero: {
+                    badge: "Welcome to the Official Mosque Portal",
+                    title: "Center of Worship, Da'wah & <span class=\"text-gold-400\">Community Empowerment</span>",
+                    subtitle: "Fostering mosque prosperity through optimal congregation services, financial transparency, enlightening regular lectures, and social welfare programs.",
+                    btn1: "View Prayer Times",
+                    btn2: "Lecture Schedule",
+                    saldoLabel: "Active Mosque Treasury Balance",
+                    liveBadge: "Live Countdown",
+                    nextPrayerLabel: "Next Prayer Time",
+                    countdownLabel: "Time Until Next Prayer",
+                    khatibLabel: "Friday Khutbah Preacher:",
+                    imamLabel: "Today's Rawatib Imam:"
+                },
+                stats: {
+                    jamaah: "Active Congregants", kajianVal: "24 Lectures", kajian: "Monthly Programs",
+                    santriVal: "140 Students", santri: "TPA Al-Ikhlas Youth", yatimVal: "85 Families", yatim: "Zakat & Aid Recipients"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Next' },
+                filters: { all: 'All', rutin: 'Regular Lectures', tahsin: 'Tahsin & TPA', sosial: 'Social Welfare', allFolder: 'All Folders' },
+                sections: {
+                    jadwalBadge: "Daily Worship Times", jadwalTitle: "Prayer & Imsakiyah Schedule", jadwalDesc: "Accurate prayer times for",
+                    kajianBadge: "Islamic Outreach", kajianTitle: "Lectures & Mosque Agenda", kajianDesc: "Join our knowledge gatherings to enrich our Islamic understanding.",
+                    galeriBadge: "Archives & Documentation", galeriTitle: "Photo Gallery & Activity Folders", galeriDesc: "Documentation of mosque activities, construction, and events organized in folders.",
+                    profilBadge: "About Us", profilTitle: "Mosque Board Profile & Management",
+                    visionLabel: "Main Vision", missionLabel: "Our Mission", boardTitle: "Mosque Executive Board",
+                    fasilitasBadge: "Congregation Facilities", fasilitasTitle: "Mosque Facilities & Infrastructure", fasilitasDesc: "We provide the best facilities for the comfort of worship and congregation activities.",
+                    fasilitasAvail: "Available for Congregation",
+                    keuanganBadge: "Accountability & Trust", keuanganTitle: "Mosque Treasury Financial Report", keuanganDesc: "Financial reports are updated regularly as a form of trust and transparency to the community.",
+                    kontakBadge: "Contact Us", kontakTitle: "Secretariat & Congregation Services",
+                    kontakDesc: "Have questions about lecture schedules, hall reservations, ambulance services, or zakat consultation? Contact us using the details below.",
+                    addressLabel: "Full Address", waLabel: "Mosque WhatsApp", emailLabel: "Official Email"
+                },
+                finance: {
+                    saldoTitle: "Total Active Treasury Balance", saldoSub: "Last updated today",
+                    masukTitle: "Total Income This Month", masukSub: "Congregation Infaq & Waqf",
+                    keluarTitle: "Total Expenses This Month", keluarSub: "Operations & Social Aid",
+                    tableTitle: "Recent Financial Transactions", tableSub: "DKM Al-Ikhlas Transparency",
+                    thTanggal: "Date", thKeterangan: "Transaction Description", thKategori: "Category", thNominal: "Amount (Rp)", thAksi: "Action"
+                },
+                toastMsg: "Language switched to Australian English."
+            },
+            ar: {
+                dir: 'rtl',
+                annBadge: 'إعلان إدارة المسجد:',
+                annEdit: 'تعديل',
+                annText: "أهلاً بكم في الموقع الرسمي لمسجد جامع الإخلاص. ندعوكم لإعمار المسجد بصلاة الجماعة وحضور الدروس العلمية الأسبوعية. باب التبرع والوقف مفتوح عبر QRIS والتحويل البنكي.",
+                devText: "تم تطوير هذا التطبيق بواسطة simple Program، البريد: rokhmatullohbanten@gmail.com وهاتف: 085946982520، نرحب بتبرعاتكم الكريمة لإنشاء الموقع عبر حساب بنك BSI رقم: 1406197774 باسم روخت الله، نفعنا الله وإياكم.",
+                devBadge: "معلومات المطور",
+                nav: { beranda: 'الرئيسية', jadwal: 'أوقات الصلاة', kajian: 'الدروس والأنشطة', galeri: 'المعرض والمجلدات', profil: 'إدارة المسجد', fasilitas: 'المرافق', keuangan: 'صندوق المسجد', kontak: 'اتصل بنا' },
+                btns: {
+                    guide: 'الدليل', editText: 'تعديل النص', logo: 'تغيير الشعار', infaq: 'التبرع الرقمي',
+                    editJadwal: 'تغيير الموقع / تعديل الأوقات', editKontak: 'تعديل العنوان والتواصل',
+                    manageFolder: 'إدارة المجلدات', uploadPhoto: 'رفع صور', editProfile: 'تعديل ملف الإدارة',
+                    editFasilitas: 'إضافة / تعديل المرافق', inputKas: 'إدخال / تعديل المعاملة', dlTemplate: 'تحميل النموذج',
+                    ulTemplate: 'رفع النموذج', printPdf: 'طباعة PDF', sendReport: 'إرسال التقرير'
+                },
+                hero: {
+                    badge: "أهلاً بكم في البوابة الرسمية لإدارة المسجد",
+                    title: "مركز العبادة والدعوة و<span class=\"text-gold-400\">تمكين المجتمع</span>",
+                    subtitle: "تعمير المسجد من خلال تقديم أفضل الخدمات للمصلين، والشفافية المالية، والدروس العلمية النافعة، والبرامج الاجتماعية.",
+                    btn1: "عرض أوقات الصلاة",
+                    btn2: "جدول الدروس",
+                    saldoLabel: "الرصيد النشط لصندوق المسجد",
+                    liveBadge: "عد تنازلي مباشر",
+                    nextPrayerLabel: "الصلاة القادمة",
+                    countdownLabel: "الوقت المتبقي للصلاة",
+                    khatibLabel: "خطيب الجمعة:",
+                    imamLabel: "إمام الرواتب اليوم:"
+                },
+                stats: {
+                    jamaah: "مصلٍ نشط", kajianVal: "٢٤ درساً", kajian: "الأنشطة الشهرية",
+                    santriVal: "١٤٠ طالباً", santri: "طلاب حلقة القرآن", yatimVal: "٨٥ أسرة", yatim: "المستفيدون من الزكاة"
+                },
+                prayers: { imsak: 'الإمساك', subuh: 'الفجر', dzuhur: 'الظهر', ashar: 'العصر', maghrib: 'المغرب', isya: 'العشاء', activeBadge: 'القادمة' },
+                filters: { all: 'الكل', rutin: 'دروس أسبوعية', tahsin: 'تحسين وتلاوة', sosial: 'أعمال خيرية', allFolder: 'جميع المجلدات' },
+                sections: {
+                    jadwalBadge: "أوقات العبادة اليومية", jadwalTitle: "مواقيت الصلاة والإمساكية", jadwalDesc: "مواقيت الصلاة الدقيقة لمنطقة",
+                    kajianBadge: "الشعائر الإسلامية", kajianTitle: "جدول الدروس وأنشطة المسجد", kajianDesc: "انضموا إلى مجالس العلم لزيادة المعرفة والفهم الإسلامي.",
+                    galeriBadge: "الأرشيف والتوثيق", galeriTitle: "معرض الصور ومجلدات الأنشطة", galeriDesc: "توثيق أنشطة المسجد والمشاريع والمجالس المحفوظة في مجلدات منظمة.",
+                    profilBadge: "من نحن", profilTitle: "ملف إدارة المسجد والهيكل التنظيمي",
+                    visionLabel: "الرؤية الرئيسية", missionLabel: "رسالتنا", boardTitle: "أعضاء مجلس إدارة المسجد",
+                    fasilitasBadge: "مرافق المصلين", fasilitasTitle: "مرافق وبنية المسجد التحتية", fasilitasDesc: "نوفر أفضل المرافق لراحة المصلين وأنشطة الجماعة.",
+                    fasilitasAvail: "متاح للمصلين",
+                    keuanganBadge: "الأمانة والشفافية", keuanganTitle: "التقرير المالي الشفاف لصندوق المسجد", keuanganDesc: "يتم تحديث التقارير المالية بانتظام كأمانة وشفافية أمام المصلين.",
+                    kontakBadge: "تواصل معنا", kontakTitle: "الأمانة العامة وخدمات المصلين",
+                    kontakDesc: "هل لديكم استفسارات حول جدول الدروس أو حجز القاعات أو خدمات الإسعاف أو استشارات الزكاة؟ تواصلوا معنا عبر البيانات أدناه.",
+                    addressLabel: "العنوان الكامل", waLabel: "واتساب الإدارة", emailLabel: "البريد الإلكتروني"
+                },
+                finance: {
+                    saldoTitle: "إجمالي الرصيد النشط", saldoSub: "آخر تحديث اليوم",
+                    masukTitle: "إجمالي الإيرادات هذا الشهر", masukSub: "تبرعات وأوقاف المصلين",
+                    keluarTitle: "إجمالي المصروفات هذا الشهر", keluarSub: "التشغيل والأعمال الخيرية",
+                    tableTitle: "آخر المعاملات المالية", tableSub: "شفافية إدارة المسجد",
+                    thTanggal: "التاريخ", thKeterangan: "بيان المعاملة", thKategori: "الفئة", thNominal: "المبلغ (روبية)", thAksi: "إجراء"
+                },
+                toastMsg: "تم تغيير اللغة إلى العربية."
+            },
+            zh: {
+                dir: 'ltr',
+                annBadge: '清真寺公告：',
+                annEdit: '编辑',
+                annText: "欢迎访问阿尔伊赫拉斯清真寺官方网站。欢迎参加集体礼拜和每周伊斯兰讲座。支持通过QRIS和BSI银行转账进行捐款。",
+                devText: "本程序由 simple Program 开发，邮箱：rokhmatullohbanten@gmail.com，WhatsApp：085946982520。BSI银行账号：1406197774（户名：Rokhmatulloh），欢迎随喜乐捐。",
+                devBadge: "开发者信息",
+                nav: { beranda: '首页', jadwal: '礼拜时间', kajian: '讲座与活动', galeri: '相册与文件夹', profil: '理事会简介', fasilitas: '清真寺设施', keuangan: '财务透明', kontak: '联系我们' },
+                btns: {
+                    guide: '使用指南', editText: '编辑标语', logo: '更改徽标', infaq: '数字捐赠',
+                    editJadwal: '搜索地点 / 编辑时间', editKontak: '编辑联系方式与地址',
+                    manageFolder: '管理文件夹', uploadPhoto: '上传照片', editProfile: '编辑简介',
+                    editFasilitas: '添加 / 编辑设施', inputKas: '添加 / 编辑账目', dlTemplate: '下载模板',
+                    ulTemplate: '上传模板', printPdf: '导出PDF', sendReport: '分享报告'
+                },
+                hero: {
+                    badge: "欢迎来到清真寺官方门户网站",
+                    title: "礼拜、宣教与<span class=\"text-gold-400\">社区赋权中心</span>",
+                    subtitle: "通过最优化的信众服务、财务透明度、富有启迪的常规讲座以及社会福利项目，促进清真寺的繁荣。",
+                    btn1: "查看礼拜时间",
+                    btn2: "讲座日程",
+                    saldoLabel: "当前清真寺资金余额",
+                    liveBadge: "实时倒计时",
+                    nextPrayerLabel: "下一次礼拜时间",
+                    countdownLabel: "距离下一次礼拜",
+                    khatibLabel: "周五聚礼演讲者：",
+                    imamLabel: "今日伊玛目："
+                },
+                stats: {
+                    jamaah: "活跃信众", kajianVal: "24场讲座", kajian: "每月项目",
+                    santriVal: "140名学生", santri: "古兰经班学员", yatimVal: "85户家庭", yatim: "救助对象"
+                },
+                prayers: { imsak: '晨礼前', subuh: '晨礼', dzuhur: '晌礼', ashar: '晡礼', maghrib: '昏礼', isya: '宵礼', activeBadge: '即将到来' },
+                filters: { all: '全部', rutin: '常规讲座', tahsin: '古兰经诵读', sosial: '社会福利', allFolder: '所有文件夹' },
+                sections: {
+                    jadwalBadge: "每日礼拜时间", jadwalTitle: "礼拜与斋戒时间表", jadwalDesc: "准确的礼拜时间：",
+                    kajianBadge: "伊斯兰宣教", kajianTitle: "讲座与清真寺日程", kajianDesc: "加入我们的知识聚会，丰富我们的伊斯兰认知。",
+                    galeriBadge: "档案与文档", galeriTitle: "照片库与活动文件夹", galeriDesc: "清真寺活动、建设及聚会的照片文档，按文件夹分类存放。",
+                    profilBadge: "关于我们", profilTitle: "清真寺理事会简介与管理",
+                    visionLabel: "主要愿景", missionLabel: "我们的使命", boardTitle: "清真寺执行理事会",
+                    fasilitasBadge: "信众设施", fasilitasTitle: "清真寺设施与基础设施", fasilitasDesc: "我们为礼拜和信众活动提供最佳的舒适设施。",
+                    fasilitasAvail: "对信众开放",
+                    keuanganBadge: "问责与信托", keuanganTitle: "清真寺资金财务报告", keuanganDesc: "定期更新财务报告，作为对社区信托和透明度的体现。",
+                    kontakBadge: "联系我们", kontakTitle: "秘书处与信众服务",
+                    kontakDesc: "对讲座日程、大厅预订、救护车服务或天课咨询有疑问？请通过以下方式联系我们。",
+                    addressLabel: "详细地址", waLabel: "清真寺WhatsApp", emailLabel: "官方邮箱"
+                },
+                finance: {
+                    saldoTitle: "当前可用资金总额", saldoSub: "今日最新更新",
+                    masukTitle: "本月总收入", masukSub: "信众捐赠与宗教信托",
+                    keluarTitle: "本月总支出", keluarSub: "运营与社会救济",
+                    tableTitle: "近期财务交易明细", tableSub: "阿尔伊赫拉斯清真寺透明度",
+                    thTanggal: "日期", thKeterangan: "交易说明", thKategori: "类别", thNominal: "金额 (Rp)", thAksi: "操作"
+                },
+                toastMsg: "语言已切换至中文 (Mandarin)."
+            },
+            ja: {
+                dir: 'ltr',
+                annBadge: 'モスクのお知らせ：',
+                annEdit: '編集',
+                annText: "アル・イクラス・モスクの公式ウェブサイトへようこそ。集団礼拝や毎週のイスラム講座にご参加ください。QRISおよびBSI銀行振込での寄付を受け付けております。",
+                devText: "このアプリは simple Program（メール：rokhmatullohbanten@gmail.com、WA：085946982520）によって作成されました。BSI口座（1406197774、名義：Rokhmatulloh）への任意の寄付をお願いします。",
+                devBadge: "開発者情報",
+                nav: { beranda: 'ホーム', jadwal: '礼拝時間', kajian: '講座・イベント', galeri: 'ギャラリー', profil: 'モスク概要', fasilitas: '施設案内', keuangan: '財務報告', kontak: 'お問い合わせ' },
+                btns: {
+                    guide: 'ご利用ガイド', editText: '文言編集', logo: 'ロゴ変更', infaq: 'デジタル寄付',
+                    editJadwal: '場所検索・時間編集', editKontak: '連絡先・住所編集',
+                    manageFolder: 'フォルダ管理', uploadPhoto: '写真アップロード', editProfile: 'プロフィール編集',
+                    editFasilitas: '施設追加・編集', inputKas: '取引追加・編集', dlTemplate: 'テンプレートDL',
+                    ulTemplate: 'テンプレートUP', printPdf: 'PDF出力', sendReport: 'レポート共有'
+                },
+                hero: {
+                    badge: "モスク公式ポータルサイトへようこそ",
+                    title: "礼拝・ダーワ・<span class=\"text-gold-400\">コミュニティ支援の中心地</span>",
+                    subtitle: "最適な信徒サービス、財務の透明性、有益な定期講座、社会福祉プログラムを通じてモスクの繁栄を促進します。",
+                    btn1: "礼拝時間を見る",
+                    btn2: "講座スケジュール",
+                    saldoLabel: "モスク活動資金残高",
+                    liveBadge: "ライブカウントダウン",
+                    nextPrayerLabel: "次の礼拝時間",
+                    countdownLabel: "次の礼拝まで",
+                    khatibLabel: "金曜礼拝説教者：",
+                    imamLabel: "本日のイマーム："
+                },
+                stats: {
+                    jamaah: "アクティブ信徒", kajianVal: "24講座", kajian: "月例プログラム",
+                    santriVal: "140名", santri: "TPAアル・イクラス生徒", yatimVal: "85世帯", yatim: "支援対象世帯"
+                },
+                prayers: { imsak: 'イムサク', subuh: 'ファジュル', dzuhur: 'ズフル', ashar: 'アスル', maghrib: 'マグリブ', isya: 'イシャ', activeBadge: '次' },
+                filters: { all: 'すべて', rutin: '定期講座', tahsin: 'タフシーン・TPA', sosial: '社会福祉', allFolder: 'すべてのフォルダ' },
+                sections: {
+                    jadwalBadge: "毎日の礼拝時間", jadwalTitle: "礼拝・イスマキヤスケジュール", jadwalDesc: "正確な礼拝時間（地域：",
+                    kajianBadge: "イスラム啓蒙", kajianTitle: "講座・モスクの予定", kajianDesc: "知識の集まりに参加して、イスラムへの理解を深めましょう。",
+                    galeriBadge: "アーカイブ・記録", galeriTitle: "フォトギャラリーと活動フォルダ", galeriDesc: "フォルダ別に整理されたモスクの活動、建設、イベントの写真記録。",
+                    profilBadge: "私たちについて", profilTitle: "モスク運営委員会プロフィール",
+                    visionLabel: "主要ビジョン", missionLabel: "私たちの使命", boardTitle: "モスク執行役員会",
+                    fasilitasBadge: "信徒向け施設", fasilitasTitle: "モスクの設備・インフラ", fasilitasDesc: "快適な礼拝と信徒活動のために最高の設備を提供しています。",
+                    fasilitasAvail: "信徒利用可能",
+                    keuanganBadge: "説明責任と信頼", keuanganTitle: "モスク活動資金財務報告", keuanganDesc: "地域社会への信頼と透明性の証として、財務報告を定期的に更新しています。",
+                    kontakBadge: "お問い合わせ", kontakTitle: "事務局・信徒サービス",
+                    kontakDesc: "講座のスケジュール、ホール予約、救急車サービス、ザカートに関するご質問は、以下の連絡先までお問い合わせください。",
+                    addressLabel: "所在地", waLabel: "モスクWhatsApp", emailLabel: "公式メール"
+                },
+                finance: {
+                    saldoTitle: "活動資金残高合計", saldoSub: "本日最終更新",
+                    masukTitle: "今月の総収入", masukSub: "信徒からの寄付・ワクフ",
+                    keluarTitle: "今月の総支出", keluarSub: "運営・社会支援費",
+                    tableTitle: "最近の財務取引", tableSub: "アル・イクラス・モスクの透明性",
+                    thTanggal: "日付", thKeterangan: "取引内容", thKategori: "カテゴリ", thNominal: "金額 (Rp)", thAksi: "操作"
+                },
+                toastMsg: "言語を日本語に切り替えました。"
+            },
+            fr: {
+                dir: 'ltr',
+                annBadge: 'ANNONCE DE LA MOSQUÉE :',
+                annEdit: 'Modifier',
+                annText: "Bienvenue sur le site officiel de la mosquée Al-Ikhlas. Rejoignez nos prières en congrégation et nos cours islamiques hebdomadaires. Dons possibles via QRIS et virement BSI.",
+                devText: "Application créée par simple Program, email : rokhmatullohbanten@gmail.com, WA : 085946982520. Dons volontaires sur le compte BSI : 1406197774 (Rokhmatulloh).",
+                devBadge: "Info Développeur",
+                nav: { beranda: 'Accueil', jadwal: 'Horaires Prières', kajian: 'Cours & Événements', galeri: 'Galerie & Dossiers', profil: 'Conseil', fasilitas: 'Installations', keuangan: 'Trésorerie', kontak: 'Contact' },
+                btns: {
+                    guide: 'Guide', editText: 'Modifier Texte', logo: 'Changer Logo', infaq: 'Don Numérique',
+                    editJadwal: 'Rechercher Lieu / Modifier', editKontak: 'Modifier Contact',
+                    manageFolder: 'Gérer Dossiers', uploadPhoto: 'Télécharger Photo', editProfile: 'Modifier Profil',
+                    editFasilitas: 'Ajouter / Modifier', inputKas: 'Ajouter / Modifier', dlTemplate: 'Télécharger Modèle',
+                    ulTemplate: 'Importer Modèle', printPdf: 'Exporter PDF', sendReport: 'Partager Rapport'
+                },
+                hero: {
+                    badge: "Bienvenue sur le portail officiel de la mosquée",
+                    title: "Centre de Culte, de Da'wa & <span class=\"text-gold-400\">d'Autonomisation Communautaire</span>",
+                    subtitle: "Favoriser la prospérité de la mosquée grâce à des services optimisés, la transparence financière, des cours réguliers et des programmes sociaux.",
+                    btn1: "Voir Horaires Prières",
+                    btn2: "Programme des Cours",
+                    saldoLabel: "Solde de Trésorerie Actif",
+                    liveBadge: "Compte à rebours en direct",
+                    nextPrayerLabel: "Prochaine Prière",
+                    countdownLabel: "Temps avant la prochaine prière",
+                    khatibLabel: "Prédicateur du Vendredi :",
+                    imamLabel: "Imam du jour :"
+                },
+                stats: {
+                    jamaah: "Fidèles Actifs", kajianVal: "24 Cours", kajian: "Programmes Mensuels",
+                    santriVal: "140 Élèves", santri: "Jeunes TPA Al-Ikhlas", yatimVal: "85 Familles", yatim: "Bénéficiaires d'Aide"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Suivante' },
+                filters: { all: 'Tous', rutin: 'Cours Réguliers', tahsin: 'Tahsin & TPA', sosial: 'Aide Sociale', allFolder: 'Tous les Dossiers' },
+                sections: {
+                    jadwalBadge: "Horaires Quotidiens", jadwalTitle: "Calendrier des Prières", jadwalDesc: "Horaires précis pour",
+                    kajianBadge: "Rayonnement Islamique", kajianTitle: "Cours et Agenda de la Mosquée", kajianDesc: "Participez à nos cercles de savoir pour enrichir votre compréhension.",
+                    galeriBadge: "Archives & Documentation", galeriTitle: "Galerie Photos & Dossiers", galeriDesc: "Documentation des activités, constructions et événements organisés par dossiers.",
+                    profilBadge: "À Propos", profilTitle: "Profil du Conseil de la Mosquée",
+                    visionLabel: "Vision Principale", missionLabel: "Notre Mission", boardTitle: "Conseil d'Administration",
+                    fasilitasBadge: "Installations", fasilitasTitle: "Infrastructures de la Mosquée", fasilitasDesc: "Nous offrons les meilleures installations pour le confort du culte.",
+                    fasilitasAvail: "Disponible pour les fidèles",
+                    keuanganBadge: "Responsabilité & Confiance", keuanganTitle: "Rapport Financier de la Trésorerie", keuanganDesc: "Les rapports financiers sont mis à jour régulièrement par transparence.",
+                    kontakBadge: "Contactez-nous", kontakTitle: "Secrétariat & Services",
+                    kontakDesc: "Des questions sur les cours, réservations de salle, services d'ambulance ou consultation de zakat ? Contactez-nous ci-dessous.",
+                    addressLabel: "Adresse Complète", waLabel: "WhatsApp Mosquée", emailLabel: "Email Officiel"
+                },
+                finance: {
+                    saldoTitle: "Solde Total Actif", saldoSub: "Dernière mise à jour aujourd'hui",
+                    masukTitle: "Revenus du Mois", masukSub: "Infaq & Waqf",
+                    keluarTitle: "Dépenses du Mois", keluarSub: "Fonctionnement & Social",
+                    tableTitle: "Transactions Financières Récentes", tableSub: "Transparence DKM Al-Ikhlas",
+                    thTanggal: "Date", thKeterangan: "Description", thKategori: "Catégorie", thNominal: "Montant (Rp)", thAksi: "Action"
+                },
+                toastMsg: "Langue changée en Français."
+            },
+            de: {
+                dir: 'ltr',
+                annBadge: 'MOSCHEE ANKÜNDIGUNG:',
+                annEdit: 'Bearbeiten',
+                annText: "Willkommen auf der offiziellen Website der Al-Ikhlas Moschee. Besuchen Sie unsere Gemeinschaftsgebete und wöchentlichen islamischen Vorträge. Spenden über QRIS und BSI-Überweisung.",
+                devText: "App erstellt von simple Program, E-Mail: rokhmatullohbanten@gmail.com, WA: 085946982520. Spenden an BSI-Konto: 1406197774 (Rokhmatulloh).",
+                devBadge: "Entwickler-Info",
+                nav: { beranda: 'Startseite', jadwal: 'Gebetszeiten', kajian: 'Vorträge & Events', galeri: 'Galerie & Ordner', profil: 'Vorstand', fasilitas: 'Einrichtungen', keuangan: 'Kasse', kontak: 'Kontakt' },
+                btns: {
+                    guide: 'Leitfaden', editText: 'Text Bearbeiten', logo: 'Logo Ändern', infaq: 'Digitale Spende',
+                    editJadwal: 'Ort Suchen / Zeiten Bearbeiten', editKontak: 'Kontakt Bearbeiten',
+                    manageFolder: 'Ordner Verwalten', uploadPhoto: 'Foto Hochladen', editProfile: 'Profil Bearbeiten',
+                    editFasilitas: 'Einrichtung Hinzufügen / Bearbeiten', inputKas: 'Eintrag Hinzufügen / Bearbeiten', dlTemplate: 'Vorlage Herunterladen',
+                    ulTemplate: 'Vorlage Hochladen', printPdf: 'PDF Exportieren', sendReport: 'Bericht Teilen'
+                },
+                hero: {
+                    badge: "Willkommen im offiziellen Moschee-Portal",
+                    title: "Zentrum für Gottesdienst, Da'wa & <span class=\"text-gold-400\">Gemeinschaftsstärkung</span>",
+                    subtitle: "Förderung des Moscheewohls durch optimale Betreuung, finanzielle Transparenz, regelmäßige Vorträge und soziale Programme.",
+                    btn1: "Gebetszeiten Ansehen",
+                    btn2: "Vortragsplan",
+                    saldoLabel: "Aktiver Kassenbestand",
+                    liveBadge: "Live-Countdown",
+                    nextPrayerLabel: "Nächste Gebetszeit",
+                    countdownLabel: "Zeit bis zum nächsten Gebet",
+                    khatibLabel: "Freitagsprediger:",
+                    imamLabel: "Heutiger Imam:"
+                },
+                stats: {
+                    jamaah: "Aktive Gemeindemitglieder", kajianVal: "24 Vorträge", kajian: "Monatliche Programme",
+                    santriVal: "140 Schüler", santri: "TPA Al-Ikhlas Jugend", yatimVal: "85 Familien", yatim: "Hilfsempfänger"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Nächste' },
+                filters: { all: 'Alle', rutin: 'Reguläre Vorträge', tahsin: 'Tahsin & TPA', sosial: 'Sozialhilfe', allFolder: 'Alle Ordner' },
+                sections: {
+                    jadwalBadge: "Tägliche Gebetszeiten", jadwalTitle: "Gebets- und Imsakiyah-Plan", jadwalDesc: "Genaue Gebetszeiten für",
+                    kajianBadge: "Islamische Aufklärung", kajianTitle: "Vorträge und Moschee-Agenda", kajianDesc: "Besuchen Sie unsere Wissenskreise zur Vertiefung des islamischen Verständnisses.",
+                    galeriBadge: "Archive & Dokumentation", galeriTitle: "Fotogalerie & Aktivitätsordner", galeriDesc: "Dokumentation von Moscheeaktivitäten, Bauarbeiten und Veranstaltungen in Ordnern.",
+                    profilBadge: "Über Uns", profilTitle: "Vorstandsprofil & Management",
+                    visionLabel: "Hauptvision", missionLabel: "Unsere Mission", boardTitle: "Moscheevorstand",
+                    fasilitasBadge: "Einrichtungen", fasilitasTitle: "Moscheeeinrichtungen & Infrastruktur", fasilitasDesc: "Wir bieten beste Einrichtungen für den Komfort des Gottesdienstes.",
+                    fasilitasAvail: "Für die Gemeinde verfügbar",
+                    keuanganBadge: "Rechenschaft & Vertrauen", keuanganTitle: "Finanzbericht der Moscheekasse", keuanganDesc: "Finanzberichte werden regelmäßig als Zeichen des Vertrauens aktualisiert.",
+                    kontakBadge: "Kontaktieren Sie uns", kontakTitle: "Sekretariat & Gemeinde-Dienste",
+                    kontakDesc: "Haben Sie Fragen zu Vorträgen, Saalreservierungen oder Zakat? Kontaktieren Sie uns untenstehend.",
+                    addressLabel: "Vollständige Adresse", waLabel: "Moschee WhatsApp", emailLabel: "Offizielle E-Mail"
+                },
+                finance: {
+                    saldoTitle: "Gesamter aktiver Kassenbestand", saldoSub: "Zuletzt heute aktualisiert",
+                    masukTitle: "Einnahmen diesen Monat", masukSub: "Infaq & Waqf",
+                    keluarTitle: "Ausgaben diesen Monat", keluarSub: "Betrieb & Soziales",
+                    tableTitle: "Letzte Finanztransaktionen", tableSub: "DKM Al-Ikhlas Transparenz",
+                    thTanggal: "Datum", thKeterangan: "Transaktionsbeschreibung", thKategori: "Kategorie", thNominal: "Betrag (Rp)", thAksi: "Aktion"
+                },
+                toastMsg: "Sprache auf Deutsch gewechselt."
+            },
+            es: {
+                dir: 'ltr',
+                annBadge: 'ANUNCIO DE LA MEZQUITA:',
+                annEdit: 'Editar',
+                annText: "Bienvenidos al sitio web oficial de la Mezquita Al-Ikhlas. Acompañenos en las oraciones y clases islámicas semanales. Donaciones digitales vía QRIS y transferencia BSI.",
+                devText: "Aplicación creada por simple Program, correo: rokhmatullohbanten@gmail.com, WA: 085946982520. Donaciones voluntarias a la cuenta BSI: 1406197774 (Rokhmatulloh).",
+                devBadge: "Info de Desarrollador",
+                nav: { beranda: 'Inicio', jadwal: 'Horarios de Oración', kajian: 'Clases y Eventos', galeri: 'Galería y Carpetas', profil: 'Consejo', fasilitas: 'Instalaciones', keuangan: 'Tesorería', kontak: 'Contacto' },
+                btns: {
+                    guide: 'Guía', editText: 'Editar Texto', logo: 'Cambiar Logo', infaq: 'Donación Digital',
+                    editJadwal: 'Buscar Ubicación / Horarios', editKontak: 'Editar Contacto',
+                    manageFolder: 'Gestionar Carpetas', uploadPhoto: 'Subir Foto', editProfile: 'Editar Perfil',
+                    editFasilitas: 'Agregar / Editar', inputKas: 'Agregar / Editar Movimiento', dlTemplate: 'Descargar Plantilla',
+                    ulTemplate: 'Subir Plantilla', printPdf: 'Exportar PDF', sendReport: 'Compartir Reporte'
+                },
+                hero: {
+                    badge: "Bienvenidos al Portal Oficial de la Mezquita",
+                    title: "Centro de Culto, Da'wa y <span class=\"text-gold-400\">Empoderamiento Comunitario</span>",
+                    subtitle: "Fomentando la prosperidad de la mezquita a través de servicios óptimos, transparencia financiera, conferencias y programas sociales.",
+                    btn1: "Ver Horarios de Oración",
+                    btn2: "Agenda de Clases",
+                    saldoLabel: "Saldo Activo de la Tesorería",
+                    liveBadge: "Cuenta regresiva en vivo",
+                    nextPrayerLabel: "Próxima Hora de Oración",
+                    countdownLabel: "Tiempo para la próxima oración",
+                    khatibLabel: "Predicador del Viernes:",
+                    imamLabel: "Imam de hoy:"
+                },
+                stats: {
+                    jamaah: "Feligreses Activos", kajianVal: "24 Clases", kajian: "Programas Mensuales",
+                    santriVal: "140 Estudiantes", santri: "Jóvenes TPA Al-Ikhlas", yatimVal: "85 Familias", yatim: "Beneficiarios de Ayuda"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Siguiente' },
+                filters: { all: 'Todos', rutin: 'Clases Regulares', tahsin: 'Tahsin y TPA', sosial: 'Ayuda Social', allFolder: 'Todas las Carpetas' },
+                sections: {
+                    jadwalBadge: "Horarios Diarios", jadwalTitle: "Calendario de Oración", jadwalDesc: "Horarios precisos para",
+                    kajianBadge: "Difusión Islámica", kajianTitle: "Clases y Agenda de la Mezquita", kajianDesc: "Únete a nuestras reuniones de conocimiento para enriquecer nuestra comprensión islámica.",
+                    galeriBadge: "Archivos y Documentación", galeriTitle: "Galería de Fotos y Carpetas", galeriDesc: "Documentación de actividades, construcción y eventos organizados en carpetas.",
+                    profilBadge: "Sobre Nosotros", profilTitle: "Perfil del Consejo de la Mezquita",
+                    visionLabel: "Visión Principal", missionLabel: "Nuestra Misión", boardTitle: "Junta Directiva",
+                    fasilitasBadge: "Instalaciones", fasilitasTitle: "Infraestructura de la Mezquita", fasilitasDesc: "Ofrecemos las mejores instalaciones para la comodidad del culto.",
+                    fasilitasAvail: "Disponible para los feligreses",
+                    keuanganBadge: "Rendición de Cuentas", keuanganTitle: "Reporte Financiero de la Mezquita", keuanganDesc: "Los informes financieros se actualizan regularmente como muestra de transparencia.",
+                    kontakBadge: "Contáctenos", kontakTitle: "Secretaría y Servicios",
+                    kontakDesc: "¿Tiene preguntas sobre horarios, reservas, servicios de ambulancia o zakat? Contáctenos a continuación.",
+                    addressLabel: "Dirección Completa", waLabel: "WhatsApp de la Mezquita", emailLabel: "Correo Oficial"
+                },
+                finance: {
+                    saldoTitle: "Saldo Activo Total", saldoSub: "Última actualización hoy",
+                    masukTitle: "Ingresos del Mes", masukSub: "Infaq y Waqf",
+                    keluarTitle: "Gastos del Mes", keluarSub: "Operaciones y Social",
+                    tableTitle: "Transacciones Financieras Recientes", tableSub: "Transparence DKM Al-Ikhlas",
+                    thTanggal: "Fecha", thKeterangan: "Descripción", thKategori: "Categoría", thNominal: "Monto (Rp)", thAksi: "Acción"
+                },
+                toastMsg: "Idioma cambiado al Español."
+            },
+            it: {
+                dir: 'ltr',
+                annBadge: 'ANNUNCIO DELLA MOSCHEA:',
+                annEdit: 'Modifica',
+                annText: "Benvenuti sul sito ufficiale della moschea Al-Ikhlas. Partecipate alle preghiere in congregazione e alle lezioni islamiche settimanali. Donazioni digitali tramite QRIS e bonifico BSI.",
+                devText: "App creata da simple Program, email: rokhmatullohbanten@gmail.com, WA: 085946982520. Donazioni volontarie al conto BSI: 1406197774 (Rokhmatulloh).",
+                devBadge: "Info Sviluppatore",
+                nav: { beranda: 'Home', jadwal: 'Orari Preghiera', kajian: 'Lezioni ed Eventi', galeri: 'Galleria', profil: 'Consiglio', fasilitas: 'Servizi', keuangan: 'Tesoreria', kontak: 'Contatti' },
+                btns: {
+                    guide: 'Guida', editText: 'Modifica Testo', logo: 'Cambia Logo', infaq: 'Donazione Digitale',
+                    editJadwal: 'Cerca Luogo / Orari', editKontak: 'Modifica Contatti',
+                    manageFolder: 'Gestisci Cartelle', uploadPhoto: 'Carica Foto', editProfile: 'Modifica Profilo',
+                    editFasilitas: 'Aggiungi / Modifica', inputKas: 'Aggiungi / Modifica Movimento', dlTemplate: 'Scarica Modello',
+                    ulTemplate: 'Carica Modello', printPdf: 'Esporta PDF', sendReport: 'Condividi Rapporto'
+                },
+                hero: {
+                    badge: "Benvenuti nel Portale Ufficiale della Moschea",
+                    title: "Centro di Culto, Da'wa e <span class=\"text-gold-400\">Empowerment Comunitario</span>",
+                    subtitle: "Promuovere la prosperità della moschea attraverso servizi ottimali, trasparenza finanziaria, conferenze e programmi sociali.",
+                    btn1: "Vedi Orari Preghiera",
+                    btn2: "Programma Lezioni",
+                    saldoLabel: "Saldo Attivo di Tesoreria",
+                    liveBadge: "Conto alla rovescia in tempo reale",
+                    nextPrayerLabel: "Prossima Preghiera",
+                    countdownLabel: "Tempo alla prossima preghiera",
+                    khatibLabel: "Predicatore del Venerdì:",
+                    imamLabel: "Imam di oggi:"
+                },
+                stats: {
+                    jamaah: "Fedeli Attivi", kajianVal: "24 Lezioni", kajian: "Programmi Mensili",
+                    santriVal: "140 Studenti", santri: "Giovani TPA Al-Ikhlas", yatimVal: "85 Famiglie", yatim: "Beneficiari di Aiuti"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Prossima' },
+                filters: { all: 'Tutti', rutin: 'Lezioni Regolari', tahsin: 'Tahsin & TPA', sosial: 'Aiuto Sociale', allFolder: 'Tutte le Cartelle' },
+                sections: {
+                    jadwalBadge: "Orari Quotidiani", jadwalTitle: "Calendario di Preghiera", jadwalDesc: "Orari di preghiera precisi per",
+                    kajianBadge: "Divulgazione Islamica", kajianTitle: "Lezioni e Agenda della Moschea", kajianDesc: "Unisciti alle nostre assemblee di conoscenza per arricchire la comprensione islamica.",
+                    galeriBadge: "Archivi e Documentazione", galeriTitle: "Galleria Foto e Cartelle", galeriDesc: "Documentazione di attività, costruzioni ed eventi organizzati in cartelle.",
+                    profilBadge: "Chi Siamo", profilTitle: "Profilo del Consiglio della Moschea",
+                    visionLabel: "Visione Principale", missionLabel: "La Nostra Missione", boardTitle: "Consiglio di Amministrazione",
+                    fasilitasBadge: "Servizi per i Fedeli", fasilitasTitle: "Infrastrutture della Moschea", fasilitasDesc: "Offriamo le migliori strutture per il comfort del culto.",
+                    fasilitasAvail: "Disponibile per i fedeli",
+                    keuanganBadge: "Responsabilità e Fiducia", keuanganTitle: "Rapporto Finanziario della Tesoreria", keuanganDesc: "I rapporti finanziari vengono aggiornati regolarmente per garantire trasparenza.",
+                    kontakBadge: "Contattaci", kontakTitle: "Segreteria e Servizi",
+                    kontakDesc: "Hai domande su orari, prenotazioni, servizi di ambulanza o zakat? Contattaci qui sotto.",
+                    addressLabel: "Indirizzo Completo", waLabel: "WhatsApp Moschea", emailLabel: "Email Ufficiale"
+                },
+                finance: {
+                    saldoTitle: "Saldo Attivo Totale", saldoSub: "Ultimo aggiornamento oggi",
+                    masukTitle: "Entrate del Mese", masukSub: "Infaq & Waqf",
+                    keluarTitle: "Uscite del Mese", keluarSub: "Operatività & Sociale",
+                    tableTitle: "Transazioni Finanziarie Recenti", tableSub: "Trasparenza DKM Al-Ikhlas",
+                    thTanggal: "Data", thKeterangan: "Descrizione", thKategori: "Categoria", thNominal: "Importo (Rp)", thAksi: "Azione"
+                },
+                toastMsg: "Lingua cambiata in Italiano."
+            },
+            ru: {
+                dir: 'ltr',
+                annBadge: 'ОБЪЯВЛЕНИЕ МЕЧЕТИ:',
+                annEdit: 'Изменить',
+                annText: "Добро пожаловать на официальный сайт мечети Аль-Ихлас. Присоединяйтесь к нашим совместным молитвам и еженедельным исламским лекциям. Пожертвования принимаются через QRIS и перевод BSI.",
+                devText: "Приложение разработано simple Program, email: rokhmatullohbanten@gmail.com, WA: 085946982520. Добровольные пожертвования на счет BSI: 1406197774 (Рохматуллох).",
+                devBadge: "Информация о разработчике",
+                nav: { beranda: 'Главная', jadwal: 'Время намаза', kajian: 'Лекции и события', galeri: 'Галерея', profil: 'О мечети', fasilitas: 'Удобства', keuangan: 'Казна', kontak: 'Контакты' },
+                btns: {
+                    guide: 'Гид', editText: 'Изменить текст', logo: 'Сменить логотип', infaq: 'Цифровое пожертвование',
+                    editJadwal: 'Найти город / Время', editKontak: 'Изменить контакты',
+                    manageFolder: 'Управление папками', uploadPhoto: 'Загрузить фото', editProfile: 'Изменить профиль',
+                    editFasilitas: 'Добавить / Изменить удобство', inputKas: 'Добавить / Изменить запись', dlTemplate: 'Скачать шаблон',
+                    ulTemplate: 'Загрузить шаблон', printPdf: 'Экспорт в PDF', sendReport: 'Поделиться отчетом'
+                },
+                hero: {
+                    badge: "Добро пожаловать на официальный портал мечети",
+                    title: "Центр богослужения, призыва и <span class=\"text-gold-400\">развития общины</span>",
+                    subtitle: "Процветание мечети через качественное обслуживание прихожан, финансовую прозрачность, регулярные лекции и социальные программы.",
+                    btn1: "Посмотреть время намаза",
+                    btn2: "Расписание лекций",
+                    saldoLabel: "Активный баланс казны мечети",
+                    liveBadge: "Живой обратный отсчет",
+                    nextPrayerLabel: "Следующий намаз",
+                    countdownLabel: "Время до следующего намаза",
+                    khatibLabel: "Проповедник пятничного хутбы:",
+                    imamLabel: "Имам на сегодня:"
+                },
+                stats: {
+                    jamaah: "Активных прихожан", kajianVal: "24 лекции", kajian: "Ежемесячные программы",
+                    santriVal: "140 учеников", santri: "Молодежь TPA Al-Ikhlas", yatimVal: "85 семей", yatim: "Получатели помощи"
+                },
+                prayers: { imsak: 'Имсак', subuh: 'Фаджр', dzuhur: 'Зухр', ashar: 'Аср', maghrib: 'Магриб', isya: 'Иша', activeBadge: 'След.' },
+                filters: { all: 'Все', rutin: 'Регулярные лекции', tahsin: 'Тахсин и TPA', sosial: 'Социальная помощь', allFolder: 'Все папки' },
+                sections: {
+                    jadwalBadge: "Ежедневное время молитвы", jadwalTitle: "Расписание намаза и имсакии", jadwalDesc: "Точное время молитвы для",
+                    kajianBadge: "Исламское просвещение", kajianTitle: "Лекции и повестка дня мечети", kajianDesc: "Присоединяйтесь к нашим кружкам знаний, чтобы углубить понимание ислама.",
+                    galeriBadge: "Архив и документация", galeriTitle: "Фотогалерея и папки активности", galeriDesc: "Документация мероприятий, строительства и событий мечети.",
+                    profilBadge: "О нас", profilTitle: "Профиль правления мечети",
+                    visionLabel: "Главное видение", missionLabel: "Наша миссия", boardTitle: "Исполнительный комитет мечети",
+                    fasilitasBadge: "Удобства для прихожан", fasilitasTitle: "Инфраструктура мечети", fasilitasDesc: "Мы предоставляем лучшие условия для комфортного побожного поклонения.",
+                    fasilitasAvail: "Доступно для прихожан",
+                    keuanganBadge: "Отчетность и доверие", keuanganTitle: "Финансовый отчет казны мечети", keuanganDesc: "Финансовые отчеты обновляются регулярно в знак прозрачности перед общиной.",
+                    kontakBadge: "Свяжитесь с нами", kontakTitle: "Секретариат и услуги прихожанам",
+                    kontakDesc: "Есть вопросы по расписанию лекций, бронированию залов, скорой помощи или закату? Свяжитесь с нами ниже.",
+                    addressLabel: "Полный адрес", waLabel: "WhatsApp мечети", emailLabel: "Официальный email"
+                },
+                finance: {
+                    saldoTitle: "Общий активный баланс казны", saldoSub: "Последнее обновление сегодня",
+                    masukTitle: "Общий доход за месяц", masukSub: "Инфак и вакуф прихожан",
+                    keluarTitle: "Общие расходы за месяц", keluarSub: "Операционные и социальные",
+                    tableTitle: "Последние финансовые транзакции", tableSub: "Прозрачность DKM Al-Ikhlas",
+                    thTanggal: "Дата", thKeterangan: "Описание транзакции", thKategori: "Категория", thNominal: "Сумма (Rp)", thAksi: "Действие"
+                },
+                toastMsg: "Язык изменен на русский."
+            },
+            ko: {
+                dir: 'ltr',
+                annBadge: '모스크 공지사항:',
+                annEdit: '편집',
+                annText: "알 이클라스 모스크 공식 웹사이트에 오신 것을 환영합니다. 공동 예배와 주간 이슬람 강연에 참여하세요. QRIS 및 BSI 계좌 이전을 통해 기부하실 수 있습니다.",
+                devText: "이 앱은 simple Program(이메일: rokhmatullohbanten@gmail.com, WA: 085946982520)에 의해 제작되었습니다. BSI 계좌(1406197774, 예금주: Rokhmatulloh)로 자발적인 기부를 부탁드립니다.",
+                devBadge: "개발자 정보",
+                nav: { beranda: '홈', jadwal: '기도 시간', kajian: '강연 및 행사', galeri: '갤러리', profil: '모스크 소개', fasilitas: '편의시설', keuangan: '재정 투명성', kontak: '연락처' },
+                btns: {
+                    guide: '이용 가이드', editText: '문구 편집', logo: '로고 변경', infaq: '디지털 기부',
+                    editJadwal: '지역 검색 / 시간 편집', editKontak: '연락처 및 주소 편집',
+                    manageFolder: '폴더 관리', uploadPhoto: '사진 업로드', editProfile: '프로필 편집',
+                    editFasilitas: '시설 추가 / 편집', inputKas: '거래 추가 / 편집', dlTemplate: '템플릿 다운로드',
+                    ulTemplate: '템플릿 업로드', printPdf: 'PDF 내보내기', sendReport: '보고서 공유'
+                },
+                hero: {
+                    badge: "모스크 공식 포털에 오신 것을 환영합니다",
+                    title: "예배, 선교 및 <span class=\"text-gold-400\">커뮤니티 역량 강화 센터</span>",
+                    subtitle: "최적의 신도 서비스, 재정 투명성, 유익한 정기 강연 및 사회 복지 프로그램을 통해 모스크의 번영을 도모합니다.",
+                    btn1: "기도 시간 보기",
+                    btn2: "강연 일정",
+                    saldoLabel: "현재 모스크 기금 잔액",
+                    liveBadge: "실시간 카운트다운",
+                    nextPrayerLabel: "다음 기도 시간",
+                    countdownLabel: "다음 기도까지 남은 시간",
+                    khatibLabel: "금요 예배 설교자:",
+                    imamLabel: "오늘의 이맘:"
+                },
+                stats: {
+                    jamaah: "활성 신도", kajianVal: "24개 강연", kajian: "월간 프로그램",
+                    santriVal: "140명 학생", santri: "TPA 알이클라스 청소년", yatimVal: "85가구", yatim: "지원 수혜 가구"
+                },
+                prayers: { imsak: '임사크', subuh: '파즈르', dzuhur: '주흐르', ashar: '아스르', maghrib: '마그리브', isya: '이샤', activeBadge: '다음' },
+                filters: { all: '전체', rutin: '정기 강연', tahsin: '타흐신 및 TPA', sosial: '사회 복지', allFolder: '모든 폴더' },
+                sections: {
+                    jadwalBadge: "일일 예배 시간", jadwalTitle: "기도 및 임사키야 일정", jadwalDesc: "정확한 기도 시간 (지역:",
+                    kajianBadge: "이슬람 포교", kajianTitle: "강연 및 모스크 일정", kajianDesc: "지식 모임에 참여하여 이슬람에 대한 이해를 높이세요.",
+                    galeriBadge: "기록 보관소", galeriTitle: "사진 갤러리 및 활동 폴더", galeriDesc: "폴더별로 정리된 모스크 활동, 건설 및 행사 사진 문서.",
+                    profilBadge: "소개", profilTitle: "모스크 운영위원회 프로필",
+                    visionLabel: "주요 비전", missionLabel: "우리의 임무", boardTitle: "모스크 집행위원회",
+                    fasilitasBadge: "신도 편의시설", fasilitasTitle: "모스크 시설 및 인프라", fasilitasDesc: "신도들의 편안한 예배와 활동을 위해 최고의 시설을 제공합니다.",
+                    fasilitasAvail: "신도 이용 가능",
+                    keuanganBadge: "책임성과 신뢰", keuanganTitle: "모스크 기금 재정 보고서", keuanganDesc: "지역 사회에 대한 신뢰와 투명성의 형태로 재정 보고서를 정기적으로 업데이트합니다.",
+                    kontakBadge: "문의하기", kontakTitle: "사무국 및 신도 서비스",
+                    kontakDesc: "강연 일정, 홀 대여, 구급차 서비스 또는 자카트 상담에 대한 문의가 있으신가요? 아래 연락처로 문의해 주세요.",
+                    addressLabel: "상세 주소", waLabel: "모스크 WhatsApp", emailLabel: "공식 이메일"
+                },
+                finance: {
+                    saldoTitle: "현재 가용 기금 총액", saldoSub: "오늘 최종 업데이트됨",
+                    masukTitle: "이번 달 총 수입", masukSub: "신도 헌금 및 와크프",
+                    keluarTitle: "이번 달 총 지출", keluarSub: "운영비 및 사회 지원",
+                    tableTitle: "최근 재정 거래 내역", tableSub: "알 이클라스 모스크 투명성",
+                    thTanggal: "날짜", thKeterangan: "거래 내역", thKategori: "카테고리", thNominal: "금액 (Rp)", thAksi: "작업"
+                },
+                toastMsg: "언어가 한국어로 변경되었습니다."
+            },
+            tr: {
+                dir: 'ltr',
+                annBadge: 'CAMİ DUYURUSU:',
+                annEdit: 'Düzenle',
+                annText: "Al-İklas Cami resmi web sitesine hoş geldiniz. Cemaatle namazlarımıza ve haftalık İslami derslerimize katılın. QRIS ve BSI banka havalesi ile bağış yapabilirsiniz.",
+                devText: "Bu uygulama simple Program tarafından oluşturulmuştur, e-posta: rokhmatullohbanten@gmail.com, WA: 085946982520. BSI hesabı üzerinden gönüllü bağışlar: 1406197774 (Rokhmatulloh).",
+                devBadge: "Geliştirici Bilgisi",
+                nav: { beranda: 'Ana Sayfa', jadwal: 'Namaz Vakitleri', kajian: 'Dersler ve Etkinlikler', galeri: 'Galeri', profil: 'Yönetim', fasilitas: 'Hizmetler', keuangan: 'Kasa', kontak: 'İletişim' },
+                btns: {
+                    guide: 'Kılavuz', editText: 'Metni Düzenle', logo: 'Logoyu Değiştir', infaq: 'Dijital Bağış',
+                    editJadwal: 'Konum Ara / Vakitleri Düzenle', editKontak: 'İletişim Düzenle',
+                    manageFolder: 'Klasörleri Yönet', uploadPhoto: 'Fotoğraf Yükle', editProfile: 'Profili Düzenle',
+                    editFasilitas: 'Tesis Ekle / Düzenle', inputKas: 'İşlem Ekle / Düzenle', dlTemplate: 'Şablonu İndir',
+                    ulTemplate: 'Şablonu Yükle', printPdf: 'PDF Çıkar', sendReport: 'Raporu Paylaş'
+                },
+                hero: {
+                    badge: "Cami Resmi Portalına Hoş Geldiniz",
+                    title: "İbadet, Tebliğ ve <span class=\"text-gold-400\">Toplumsal Güçlendirme Merkezi</span>",
+                    subtitle: "En iyi cemaat hizmetleri, finansal şeffaflık, düzenli dersler ve sosyal programlar yoluyla cami refahını artırmak.",
+                    btn1: "Namaz Vakitlerini Gör",
+                    btn2: "Ders Programı",
+                    saldoLabel: "Aktif Cami Kasa Bakiyesi",
+                    liveBadge: "Canlı Geri Sayım",
+                    nextPrayerLabel: "Sonraki Namaz Vakti",
+                    countdownLabel: "Sonraki Namaza Kalan Süre",
+                    khatibLabel: "Cuma Hutbesi Hatibi:",
+                    imamLabel: "Bugünkü İmam:"
+                },
+                stats: {
+                    jamaah: "Aktif Cemaat", kajianVal: "24 Ders", kajian: "Aylık Programlar",
+                    santriVal: "140 Öğrenci", santri: "TPA Al-Ikhlas Gençliği", yatimVal: "85 Aile", yatim: "Yardım Alanlar"
+                },
+                prayers: { imsak: 'İmsak', subuh: 'Sabah', dzuhur: 'Öğle', ashar: 'İkindi', maghrib: 'Akşam', isya: 'Yatsı', activeBadge: 'Sonraki' },
+                filters: { all: 'Tümü', rutin: 'Düzenli Dersler', tahsin: 'Tahsin ve TPA', sosial: 'Sosyal Yardım', allFolder: 'Tüm Klasörler' },
+                sections: {
+                    jadwalBadge: "Günlük İbadet Vakitleri", jadwalTitle: "Namaz ve İmsakiye Takvimi", jadwalDesc: "Şunun için kesin namaz vakitleri:",
+                    kajianBadge: "İslami Bilgilendirme", kajianTitle: "Dersler ve Cami Ajandası", kajianDesc: "İslami anlayışımızı zenginleştirmek için ilim meclislerimize katılın.",
+                    galeriBadge: "Arşiv ve Dokümantasyon", galeriTitle: "Fotoğraf Galerisi ve Klasörler", galeriDesc: "Klasörler halinde organize edilmiş cami faaliyetleri ve etkinliklerin fotoğrafları.",
+                    profilBadge: "Hakkımızda", profilTitle: "Cami Yönetim Kurulu Profili",
+                    visionLabel: "Ana Vizyon", missionLabel: "Misyonumuz", boardTitle: "Cami Yürütme Kurulu",
+                    fasilitasBadge: "Cemaat Tesisleri", fasilitasTitle: "Cami Tesisleri ve Altyapısı", fasilitasDesc: "İbadet konforu için en iyi tesisleri sunuyoruz.",
+                    fasilitasAvail: "Cemaat için kullanılabilir",
+                    keuanganBadge: "Hesap Verebilirlik ve Güven", keuanganTitle: "Cami Kasa Finansal Raporu", keuanganDesc: "Finansal raporlar, cemaate karşı şeffaflık amacıyla düzenli olarak güncellenir.",
+                    kontakBadge: "Bize Ulaşın", kontakTitle: "Sekreterlik ve Cemaat Hizmetleri",
+                    kontakDesc: "Ders programları, salon rezervasyonları, ambulans hizmetleri veya zekat danışmanlığı hakkında sorularınız mı var? Aşağıdan bize ulaşın.",
+                    addressLabel: "Tam Adres", waLabel: "Cami WhatsApp", emailLabel: "Resmi E-posta"
+                },
+                finance: {
+                    saldoTitle: "Toplam Aktif Kasa Bakiyesi", saldoSub: "Bugün son güncellenen",
+                    masukTitle: "Bu Ayın Toplam Geliri", masukSub: "Cemaat İnfak ve Vakfı",
+                    keluarTitle: "Bu Ayın Toplam Gideri", keluarSub: "Operasyon ve Sosyal",
+                    tableTitle: "Son Finansal İşlemler", tableSub: "DKM Al-Ikhlas Şeffaflığı",
+                    thTanggal: "Tarih", thKeterangan: "İşlem Açıklaması", thKategori: "Kategori", thNominal: "Tutar (Rp)", thAksi: "İşlem"
+                },
+                toastMsg: "Dil Türkçe olarak değiştirildi."
+            },
+            nl: {
+                dir: 'ltr',
+                annBadge: 'MOSKEE AANKONDIGING:',
+                annEdit: 'Bewerken',
+                annText: "Welkom op de officiële website van moskee Al-Ikhlas. Doe mee met onze gezamenlijke gebeden en wekelijkse islamitische lessen. Digitale donaties via QRIS en BSI overboeking.",
+                devText: "App gemaakt door simple Program, e-mail: rokhmatullohbanten@gmail.com, WA: 085946982520. Vrijwillige donaties op BSI-rekening: 1406197774 (Rokhmatulloh).",
+                devBadge: "Ontwikkelaar Info",
+                nav: { beranda: 'Home', jadwal: 'Gebedstijden', kajian: 'Lessen & Evenementen', galeri: 'Galerij', profil: 'Bestuur', fasilitas: 'Faciliteiten', keuangan: 'Kas', kontak: 'Contact' },
+                btns: {
+                    guide: 'Gids', editText: 'Tekst Bewerken', logo: 'Logo Wijzigen', infaq: 'Digitale Donatie',
+                    editJadwal: 'Locatie Zoeken / Bewerken', editKontak: 'Contact Bewerken',
+                    manageFolder: 'Mappen Beheren', uploadPhoto: 'Foto Uploaden', editProfile: 'Profiel Bewerken',
+                    editFasilitas: 'Faciliteit Toevoegen / Bewerken', inputKas: 'Transactie Toevoegen / Bewerken', dlTemplate: 'Sjabloon Downloaden',
+                    ulTemplate: 'Sjabloon Uploaden', printPdf: 'PDF Exporteren', sendReport: 'Rapport Delen'
+                },
+                hero: {
+                    badge: "Welkom op het officiële moskeeportaal",
+                    title: "Centrum voor Aanbidding, Da'wa & <span class=\"text-gold-400\">Gemeenschapsversterking</span>",
+                    subtitle: "Het bevorderen van moskeewelszijn door optimale diensten, financiële transparantie, regelmatige lezingen en sociale programma's.",
+                    btn1: "Bekijk Gebedstijden",
+                    btn2: "Lessenrooster",
+                    saldoLabel: "Actief Saldo Moskeekas",
+                    liveBadge: "Live aftellen",
+                    nextPrayerLabel: "Volgende Gebedstijd",
+                    countdownLabel: "Tijd tot volgend gebed",
+                    khatibLabel: "Vrijdagpreek Voorganger:",
+                    imamLabel: "Imam van vandaag:"
+                },
+                stats: {
+                    jamaah: "Actieve Gangers", kajianVal: "24 Lessen", kajian: "Maandelijkse Programma's",
+                    santriVal: "140 Studenten", santri: "TPA Al-Ikhlas Jeugd", yatimVal: "85 Families", yatim: "Hulpontvangers"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Volgende' },
+                filters: { all: 'Alle', rutin: 'Reguliere Lessen', tahsin: 'Tahsin & TPA', sosial: 'Sociale Hulp', allFolder: 'Alle Mappen' },
+                sections: {
+                    jadwalBadge: "Dagelijkse Gebedstijden", jadwalTitle: "Gebeds- en Imsakiyah Schema", jadwalDesc: "Nauwkeurige gebedstijden voor",
+                    kajianBadge: "Islamitische Voorlichting", kajianTitle: "Lessen & Moskee Agenda", kajianDesc: "Sluit je aan bij onze bijeenkomsten om je islamitische begrip te verrijken.",
+                    galeriBadge: "Archieven & Documentatie", galeriTitle: "Fotogalerij & Mappen", galeriDesc: "Documentatie van moskeeactiviteiten, bouw en evenementen geordend in mappen.",
+                    profilBadge: "Over Ons", profilTitle: "Bestuursprofiel & Beheer",
+                    visionLabel: "Hoofdvisie", missionLabel: "Onze Missie", boardTitle: "Uitvoerend Bestuur",
+                    fasilitasBadge: "Gemeenschapsfaciliteiten", fasilitasTitle: "Moskeefaciliteiten & Infrastructuur", fasilitasDesc: "Wij bieden de beste faciliteiten voor comfortabel aanbidden.",
+                    fasilitasAvail: "Beschikbaar voor de gemeenschap",
+                    keuanganBadge: "Verantwoording & Vertrouwen", keuanganTitle: "Financieel Rapport Moskeekas", keuanganDesc: "Financiële rapporten worden regelmatig bijgewerkt als teken van transparantie.",
+                    kontakBadge: "Neem Contact Op", kontakTitle: "Secretariaat & Diensten",
+                    kontakDesc: "Vragen over lessen, zaalverhuur, ambulancediensten of zakat? Neem hieronder contact met ons op.",
+                    addressLabel: "Volledig Adres", waLabel: "Moskee WhatsApp", emailLabel: "Officiële E-mail"
+                },
+                finance: {
+                    saldoTitle: "Totaal Actief Kasaldo", saldoSub: "Laatst bijgewerkt vandaag",
+                    masukTitle: "Totale Inkomsten Deze Maand", masukSub: "Infaq & Waqf",
+                    keluarTitle: "Totale Uitgaven Deze Maand", keluarSub: "Operatie & Sociaal",
+                    tableTitle: "Recente Financiële Transacties", tableSub: "DKM Al-Ikhlas Transparantie",
+                    thTanggal: "Datum", thKeterangan: "Transactiebeschrijving", thKategori: "Categorie", thNominal: "Bedrag (Rp)", thAksi: "Actie"
+                },
+                toastMsg: "Taal gewijzigd naar Nederlands."
+            },
+            pt: {
+                dir: 'ltr',
+                annBadge: 'AVISO DA MESQUITA:',
+                annEdit: 'Editar',
+                annText: "Bem-vindo ao site oficial da Mesquita Al-Ikhlas. Participe das nossas orações em congregação e aulas islâmicas semanais. Doações via QRIS e transferência BSI.",
+                devText: "Aplicativo criado por simple Program, email: rokhmatullohbanten@gmail.com, WA: 085946982520. Doações voluntárias para a conta BSI: 1406197774 (Rokhmatulloh).",
+                devBadge: "Info do Desenvolvedor",
+                nav: { beranda: 'Início', jadwal: 'Horários de Oração', kajian: 'Aulas e Eventos', galeri: 'Galeria', profil: 'Conselho', fasilitas: 'Instalações', keuangan: 'Tesouraria', kontak: 'Contato' },
+                btns: {
+                    guide: 'Guia', editText: 'Editar Texto', logo: 'Mudar Logo', infaq: 'Doação Digital',
+                    editJadwal: 'Buscar Local / Editar Horários', editKontak: 'Editar Contato',
+                    manageFolder: 'Gerenciar Pastas', uploadPhoto: 'Enviar Foto', editProfile: 'Editar Perfil',
+                    editFasilitas: 'Adicionar / Editar', inputKas: 'Adicionar / Editar Transação', dlTemplate: 'Baixar Modelo',
+                    ulTemplate: 'Enviar Modelo', printPdf: 'Exportar PDF', sendReport: 'Compartilhar Relatório'
+                },
+                hero: {
+                    badge: "Bem-vindo ao Portal Oficial da Mesquita",
+                    title: "Centro de Culto, Da'wa e <span class=\"text-gold-400\">Empoderamento Comunitário</span>",
+                    subtitle: "Fomentando a prosperidade da mesquita através de serviços ótimos, transparência financeira, palestras regulares e programas sociais.",
+                    btn1: "Ver Horários de Oração",
+                    btn2: "Agenda de Aulas",
+                    saldoLabel: "Saldo Ativo da Tesouraria",
+                    liveBadge: "Contagem regressiva ao vivo",
+                    nextPrayerLabel: "Próximo Horário de Oração",
+                    countdownLabel: "Tempo até a próxima oração",
+                    khatibLabel: "Pregador da Sexta-feira:",
+                    imamLabel: "Imam de hoje:"
+                },
+                stats: {
+                    jamaah: "Fieis Ativos", kajianVal: "24 Aulas", kajian: "Programas Mensais",
+                    santriVal: "140 Alunos", santri: "Jovens TPA Al-Ikhlas", yatimVal: "85 Famílias", yatim: "Beneficiários de Ajuda"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Próxima' },
+                filters: { all: 'Todos', rutin: 'Aulas Regulares', tahsin: 'Tahsin & TPA', sosial: 'Ajuda Social', allFolder: 'Todas as Pastas' },
+                sections: {
+                    jadwalBadge: "Horários Diários", jadwalTitle: "Calendário de Orações", jadwalDesc: "Horários de oração precisos para",
+                    kajianBadge: "Divulgação Islâmica", kajianTitle: "Aulas e Agenda da Mesquita", kajianDesc: "Junte-se aos nossos círculos de conhecimento para enriquecer a compreensão islâmica.",
+                    galeriBadge: "Arquivos e Documentação", galeriTitle: "Galeria de Fotos e Pastas", galeriDesc: "Documentação de atividades, construção e eventos organizados em pastas.",
+                    profilBadge: "Sobre Nós", profilTitle: "Perfil do Conselho da Mesquita",
+                    visionLabel: "Visão Principal", missionLabel: "Nossa Missão", boardTitle: "Conselho Executivo",
+                    fasilitasBadge: "Instalações Comunitárias", fasilitasTitle: "Infraestrutura da Mesquita", fasilitasDesc: "Oferecemos as melhores instalações para o conforto do culto.",
+                    fasilitasAvail: "Disponível para os fiéis",
+                    keuanganBadge: "Prestação de Contas e Confiança", keuanganTitle: "Relatório Financeiro da Tesouraria", keuanganDesc: "Relatórios financeiros atualizados regularmente como sinal de transparência.",
+                    kontakBadge: "Entre em Contato", kontakTitle: "Secretaria e Serviços",
+                    kontakDesc: "Tem dúvidas sobre horários, reservas, serviços de ambulância ou zakat? Entre em contato abaixo.",
+                    addressLabel: "Endereço Completo", waLabel: "WhatsApp da Mesquita", emailLabel: "E-mail Oficial"
+                },
+                finance: {
+                    saldoTitle: "Saldo Total Ativo", saldoSub: "Última atualização hoje",
+                    masukTitle: "Receita Total do Mês", masukSub: "Infaq & Waqf",
+                    keluarTitle: "Despesas Totais do Mês", keluarSub: "Operações & Social",
+                    tableTitle: "Transações Financeiras Recentes", tableSub: "Transparência DKM Al-Ikhlas",
+                    thTanggal: "Data", thKeterangan: "Descrição", thKategori: "Categoria", thNominal: "Valor (Rp)", thAksi: "Ação"
+                },
+                toastMsg: "Idioma alterado para Português."
+            },
+            vi: {
+                dir: 'ltr',
+                annBadge: 'THÔNG BÁO NHÀ THỜ:',
+                annEdit: 'Sửa',
+                annText: "Chào mừng đến với trang web chính thức của Nhà thờ Hồi giáo Al-Ikhlas. Hãy tham gia cầu nguyện tập thể và các buổi thuyết giảng hàng tuần. Quyên góp qua QRIS và chuyển khoản BSI.",
+                devText: "Ứng dụng được tạo bởi simple Program, email: rokhmatullohbanten@gmail.com, WA: 085946982520. Quyên góp tự nguyện vào tài khoản BSI: 1406197774 (Rokhmatulloh).",
+                devBadge: "Thông tin nhà phát triển",
+                nav: { beranda: 'Trang chủ', jadwal: 'Giờ cầu nguyện', kajian: 'Bài giảng & Sự kiện', galeri: 'Thư viện ảnh', profil: 'Ban quản trị', fasilitas: 'Tiện ích', keuangan: 'Tài chính', kontak: 'Liên hệ' },
+                btns: {
+                    guide: 'Hướng dẫn', editText: 'Sửa tiêu đề', logo: 'Đổi logo', infaq: 'Quyên góp số',
+                    editJadwal: 'Tìm địa điểm / Sửa giờ', editKontak: 'Sửa liên hệ & Địa chỉ',
+                    manageFolder: 'Quản lý thư mục', uploadPhoto: 'Tải ảnh lên', editProfile: 'Sửa hồ sơ ban quản trị',
+                    editFasilitas: 'Thêm / Sửa tiện ích', inputKas: 'Thêm / Sửa giao dịch', dlTemplate: 'Tải mẫu',
+                    ulTemplate: 'Tải lên mẫu', printPdf: 'Xuất PDF', sendReport: 'Chia sẻ báo cáo'
+                },
+                hero: {
+                    badge: "Chào mừng đến cổng thông tin chính thức",
+                    title: "Trung tâm Tôn giáo, Da'wa & <span class=\"text-gold-400\">Trao quyền cộng đồng</span>",
+                    subtitle: "Thúc đẩy sự thịnh vượng của nhà thờ thông qua dịch vụ tối ưu, minh bạch tài chính, các bài giảng định kỳ và chương trình phúc lợi xã hội.",
+                    btn1: "Xem giờ cầu nguyện",
+                    btn2: "Lịch thuyết giảng",
+                    saldoLabel: "Số dư quỹ nhà thờ hiện tại",
+                    liveBadge: "Đếm ngược trực tiếp",
+                    nextPrayerLabel: "Giờ cầu nguyện tiếp theo",
+                    countdownLabel: "Thời gian đến giờ tiếp theo",
+                    khatibLabel: "Giảng viên Thứ Sáu:",
+                    imamLabel: "Imam hôm nay:"
+                },
+                stats: {
+                    jamaah: "Tín đồ tích cực", kajianVal: "24 bài giảng", kajian: "Chương trình tháng",
+                    santriVal: "140 học viên", santri: "Học sinh TPA Al-Ikhlas", yatimVal: "85 hộ gia đình", yatim: "Người nhận trợ cấp"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Fajr', dzuhur: 'Dhuhr', ashar: 'Asr', maghrib: 'Maghrib', isya: 'Isha', activeBadge: 'Tiếp theo' },
+                filters: { all: 'Tất cả', rutin: 'Bài giảng định kỳ', tahsin: 'Tahsin & TPA', sosial: 'Phúc lợi xã hội', allFolder: 'Tất cả thư mục' },
+                sections: {
+                    jadwalBadge: "Giờ hành lễ hàng ngày", jadwalTitle: "Lịch cầu nguyện & Imsakiyah", jadwalDesc: "Giờ cầu nguyện chính xác cho",
+                    kajianBadge: "Tuyên truyền Hồi giáo", kajianTitle: "Bài giảng & Chương trình nhà thờ", kajianDesc: "Tham gia các buổi tụ họp tri thức để làm phong phú hiểu biết Hồi giáo.",
+                    galeriBadge: "Lưu trữ & Tài liệu", galeriTitle: "Thư viện ảnh & Thư mục hoạt động", galeriDesc: "Tài liệu về các hoạt động, xây dựng và sự kiện của nhà thờ được sắp xếp theo thư mục.",
+                    profilBadge: "Về chúng tôi", profilTitle: "Hồ sơ ban quản lý nhà thờ",
+                    visionLabel: "Tầm nhìn chính", missionLabel: "Sứ mệnh của chúng tôi", boardTitle: "Ban điều hành nhà thờ",
+                    fasilitasBadge: "Tiện ích tín đồ", fasilitasTitle: "Cơ sở hạ tầng nhà thờ", fasilitasDesc: "Chúng tôi cung cấp các tiện ích tốt nhất cho sự thoải mái khi hành lễ.",
+                    fasilitasAvail: "Dành cho tín đồ",
+                    keuanganBadge: "Trách nhiệm & Niềm tin", keuanganTitle: "Báo cáo tài chính quỹ nhà thờ", keuanganDesc: "Báo cáo tài chính được cập nhật thường xuyên nhằm thể hiện sự minh bạch với cộng đồng.",
+                    kontakBadge: "Liên hệ với chúng tôi", kontakTitle: "Ban thư ký & Dịch vụ tín đồ",
+                    kontakDesc: "Có câu hỏi về lịch trình bài giảng, đặt hội trường, dịch vụ xe cứu thương hoặc tư vấn zakat? Hãy liên hệ với chúng tôi bên dưới.",
+                    addressLabel: "Địa chỉ đầy đủ", waLabel: "WhatsApp nhà thờ", emailLabel: "Email chính thức"
+                },
+                finance: {
+                    saldoTitle: "Tổng số dư quỹ hoạt động", saldoSub: "Cập nhật lần cuối hôm nay",
+                    masukTitle: "Tổng thu nhập tháng này", masukSub: "Infaq & Waqf tín đồ",
+                    keluarTitle: "Tổng chi tiêu tháng này", keluarSub: "Vận hành & Xã hội",
+                    tableTitle: "Giao dịch tài chính gần đây", tableSub: "Sự minh bạch của DKM Al-Ikhlas",
+                    thTanggal: "Ngày", thKeterangan: "Mô tả giao dịch", thKategori: "Danh mục", thNominal: "Số tiền (Rp)", thAksi: "Thao tác"
+                },
+                toastMsg: "Đã chuyển sang tiếng Việt."
+            },
+            hi: {
+                dir: 'ltr',
+                annBadge: 'मस्जिद की घोषणा:',
+                annEdit: 'संपादित करें',
+                annText: "मस्जिद जामी अल-इखलास की आधिकारिक वेबसाइट पर आपका स्वागत है। हमारी सामूहिक प्रार्थनाओं और साप्ताहिक इस्लामी व्याख्यानों में शामिल हों। QRIS और BSI बैंक ट्रांसफर के माध्यम से दान करें।",
+                devText: "यह एप्लिकेशन simple Program द्वारा बनाया गया है, ईमेल: rokhmatullohbanten@gmail.com, WA: 085946982520। BSI खाते 1406197774 (रोखमतुल्लाह) में स्वैच्छिक दान करें।",
+                devBadge: "डेवलपर जानकारी",
+                nav: { beranda: 'होम', jadwal: 'नमाज़ का समय', kajian: 'व्याख्यान और कार्यक्रम', galeri: 'गैलरी', profil: 'बोर्ड प्रोफ़ाइल', fasilitas: 'सुविधाएं', keuangan: 'कोष', kontak: 'संपर्क' },
+                btns: {
+                    guide: 'गाइड', editText: 'पाठ संपादित करें', logo: 'लोगो बदलें', infaq: 'डिजिटल दान',
+                    editJadwal: 'स्थान खोजें / समय संपादित करें', editKontak: 'संपर्क और पता संपादित करें',
+                    manageFolder: 'फ़ोल्डर प्रबंधित करें', uploadPhoto: 'फ़ोटो अपलोड करें', editProfile: 'प्रोफ़ाइल संपादित करें',
+                    editFasilitas: 'सुविधाएं जोड़ें / संपादित करें', inputKas: 'लेन-देन जोड़ें / संपादित करें', dlTemplate: 'टेम्पलेट डाउनलोड करें',
+                    ulTemplate: 'टेम्पलेट अपलोड करें', printPdf: 'PDF निर्यात करें', sendReport: 'रिपोर्ट साझा करें'
+                },
+                hero: {
+                    badge: "आधिकारिक मस्जिद पोर्टल में आपका स्वागत है",
+                    title: "इबादत, दावाह और <span class=\"text-gold-400\">सामुदायिक सशक्तिकरण केंद्र</span>",
+                    subtitle: "इष्टतम सेवाओं, वित्तीय पारदशिता, नियमित व्याख्यानों और सामाजिक कल्याण कार्यक्रमों के माध्यम से मस्जिद की समृद्धि को बढ़ावा देना।",
+                    btn1: "नमाज़ का समय देखें",
+                    btn2: "व्याख्यान अनुसूची",
+                    saldoLabel: "सक्रिय मस्जिद कोष शेष",
+                    liveBadge: "लाइव काउंटडाउन",
+                    nextPrayerLabel: "अगली नमाज़ का समय",
+                    countdownLabel: "अगली नमाज़ तक शेष समय",
+                    khatibLabel: "शुक्रवार खुतबा वक्ता:",
+                    imamLabel: "आज के इमाम:"
+                },
+                stats: {
+                    jamaah: "सक्रिय नमाज़ी", kajianVal: "24 व्याख्यान", kajian: "मासिक कार्यक्रम",
+                    santriVal: "140 छात्र", santri: "TPA अल-इखलास युवा", yatimVal: "85 परिवार", yatim: "सहायता प्राप्तकर्ता"
+                },
+                prayers: { imsak: 'इम्सक', subuh: 'फज्र', dzuhur: 'ज़हर', ashar: 'असर', maghrib: 'मग़रिब', isya: 'इशा', activeBadge: 'अगला' },
+                filters: { all: 'सभी', rutin: 'नियमित व्याख्यान', tahsin: 'तहसीन और TPA', sosial: 'सामाजिक कल्याण', allFolder: 'सभी फ़ोल्डर' },
+                sections: {
+                    jadwalBadge: "दैनिक इबादत का समय", jadwalTitle: "नमाज़ और इम्सकिया अनुसूची", jadwalDesc: "सटीक नमाज़ का समय:",
+                    kajianBadge: "इस्लामी प्रचार", kajianTitle: "व्याख्यान और मस्जिद एजेंडा", kajianDesc: "अपनी इस्लामी समझ को समृद्ध करने के लिए हमारी ज्ञान सभाओं में शामिल हों।",
+                    galeriBadge: "अभिलेखागार और दस्तावेज़", galeriTitle: "फ़ोटो गैलरी और गतिविधि फ़ोल्डर", galeriDesc: "फ़ोल्डर में व्यवस्थित मस्जिद की गतिविधियों और कार्यक्रमों का दस्तावेजीकरण।",
+                    profilBadge: "हमारे बारे में", profilTitle: "मस्जिद बोर्ड प्रोफ़ाइल और प्रबंधन",
+                    visionLabel: "मुख्य दृष्टिकोण", missionLabel: "हमारा मिशन", boardTitle: "मस्जिद कार्यकारी बोर्ड",
+                    fasilitasBadge: "नमाज़ी सुविधाएं", fasilitasTitle: "मस्जिद की बुनियादी सुविधाएं", fasilitasDesc: "हम इबादत और गतिविधियों की सुविधा के लिए सर्वोत्तम सुविधाएं प्रदान करते हैं।",
+                    fasilitasAvail: "नमाज़ियों के लिए उपलब्ध",
+                    keuanganBadge: "जवाबदेही और विश्वास", keuanganTitle: "मस्जिद कोष वित्तीय रिपोर्ट", keuanganDesc: "समुदाय के प्रति पारदर्शिता के रूप में वित्तीय रिपोर्ट नियमित रूप से अपडेट की जाती हैं।",
+                    kontakBadge: "संपर्क करें", kontakTitle: "सचिवालय और नमाज़ी सेवाएं",
+                    kontakDesc: "व्याख्यान कार्यक्रम, हॉल आरक्षण, एम्बुलेंस सेवाओं या ज़कात परामर्श के बारे में प्रश्न हैं? नीचे संपर्क करें।",
+                    addressLabel: "पूरा पता", waLabel: "मस्जिद WhatsApp", emailLabel: "आधिकारिक ईमेल"
+                },
+                finance: {
+                    saldoTitle: "कुल सक्रिय कोष शेष", saldoSub: "आज अंतिम बार अपडेट किया गया",
+                    masukTitle: "इस महीने की कुल आय", masukSub: "नमाज़ियों का इन्फाक और वक्फ",
+                    keluarTitle: "इस महीने का कुल खर्च", keluarSub: "संचालन और सामाजिक सहायता",
+                    tableTitle: "हालिया वित्तीय लेनदेन", tableSub: "DKM अल-इखलास पारदर्शिता",
+                    thTanggal: "दिनांक", thKeterangan: "लेन-देन विवरण", thKategori: "श्रेणी", thNominal: "राशि (Rp)", thAksi: "कारਵਾਈ"
+                },
+                toastMsg: "भाषा बदलकर हिंदी कर दी गई है।"
+            },
+            th: {
+                dir: 'ltr',
+                annBadge: 'ประกาศจากมัสยิด:',
+                annEdit: 'แก้ไข',
+                annText: "ยินดีต้อนรับสู่เว็บไซต์อย่างเป็นทางการของมัสยิดญามีอ์ อัล-อิคลาส ร่วมละหมาดญะมาอะฮ์และรับฟังบรรยายอิสลามประจำสัปดาห์ บริจาคผ่าน QRIS และโอนเงินธนาคาร BSI",
+                devText: "แอปพลิเคชันนี้สร้างโดย simple Program, อีเมล: rokhmatullohbanten@gmail.com, WA: 085946982520 บริจาคสมทบทุนบัญชี BSI: 1406197774 (ชื่อ ร็อคห์มาตุลลอฮ์)",
+                devBadge: "ข้อมูลผู้พัฒนา",
+                nav: { beranda: 'หน้าแรก', jadwal: 'เวลาละหมาด', kajian: 'บรรยาย & กิจกรรม', galeri: 'แกลเลอรี', profil: 'เกี่ยวกับมัสยิด', fasilitas: 'สิ่งอำนวยความสะดวก', keuangan: 'การเงิน', kontak: 'ติดต่อ' },
+                btns: {
+                    guide: 'คู่มือ', editText: 'แก้ไขข้อความ', logo: 'เปลี่ยนโลโก้', infaq: 'บริจาคดิจิทัล',
+                    editJadwal: 'ค้นหาพื้นที่ / แก้ไขเวลา', editKontak: 'แก้ไขข้อมูลติดต่อ & ที่อยู่',
+                    manageFolder: 'จัดการโฟลเดอร์', uploadPhoto: 'อัปโหลดรูปภาพ', editProfile: 'แก้ไขโปรไฟล์',
+                    editFasilitas: 'เพิ่ม / แก้ไขสิ่งอำนวยความสะดวก', inputKas: 'เพิ่ม / แก้ไขรายการเงินสด', dlTemplate: 'ดาวน์โหลดเทมเพลต',
+                    ulTemplate: 'อัปโหลดเทมเพลต', printPdf: 'พิมพ์ PDF', sendReport: 'แชร์รายงาน'
+                },
+                hero: {
+                    badge: "ยินดีต้อนรับสู่พอร์ทัลมัสยิดอย่างเป็นทางการ",
+                    title: "ศูนย์กลางการอิบาดะห์ ดาวะห์ และ <span class=\"text-gold-400\">การพัฒนาชุมชน</span>",
+                    subtitle: "ส่งเสริมความเจริญรุ่งเรืองของมัสยิดผ่านการบริการสัปปุรุษที่ยอดเยี่ยม ความโปร่งใสทางการเงิน และโครงการสังคมสงเคราะห์",
+                    btn1: "ดูเวลาละหมาด",
+                    btn2: "ตารางบรรยาย",
+                    saldoLabel: "ยอดเงินกองทุนมัสยิดปัจจุบัน",
+                    liveBadge: "นับถอยหลังสด",
+                    nextPrayerLabel: "เวลาละหมาดถัดไป",
+                    countdownLabel: "เวลาเหลือก่อนละหมาดถัดไป",
+                    khatibLabel: "คอทิบละหมาดวันศุกร์:",
+                    imamLabel: "อิหม่ามประจำวันนี้:"
+                },
+                stats: {
+                    jamaah: "สัปปุรุษประจำ", kajianVal: "24 บรรยาย", kajian: "กิจกรรมประจำเดือน",
+                    santriVal: "140 นักเรียน", santri: "เยาวชน TPA Al-Ikhlas", yatimVal: "85 ครอบครัว", yatim: "ผู้รับการช่วยเหลือ"
+                },
+                prayers: { imsak: 'อิมซาก', subuh: 'ซุบฮิ', dzuhur: 'ดุฮริ', ashar: 'อัสริ', maghrib: 'มัฆริบ', isya: 'อิชาอ์', activeBadge: 'ถัดไป' },
+                filters: { all: 'ทั้งหมด', rutin: 'บรรยายประจำ', tahsin: 'ตัสฮีน & TPA', sosial: 'สังคมสงเคราะห์', allFolder: 'ทุกโฟลเดอร์' },
+                sections: {
+                    jadwalBadge: "เวลาอิบาดะห์ประจำวัน", jadwalTitle: "ตารางเวลาละหมาดและอิมซากียะห์", jadwalDesc: "เวลาละหมาดที่แม่นยำสำหรับ",
+                    kajianBadge: "เผยแผ่อิสลาม", kajianTitle: "บรรยายและวาระงานมัสยิด", kajianDesc: "เข้าร่วมวงประชุมความรู้เพื่อเพิ่มพูนความเข้าใจในอิสลาม",
+                    galeriBadge: "คลังภาพ & เอกสาร", galeriTitle: "แกลเลอรีภาพถ่าย & โฟลเดอร์กิจกรรม", galeriDesc: "บันทึกภาพกิจกรรม การก่อสร้าง และเหตุการณ์ของมัสยิดจัดตามโฟลเดอร์",
+                    profilBadge: "เกี่ยวกับเรา", profilTitle: "โปรไฟล์คณะกรรมการบริหารมัสยิด",
+                    visionLabel: "วิสัยทัศน์หลัก", missionLabel: "พันธกิจของเรา", boardTitle: "คณะกรรมการบริหารมัสยิด",
+                    fasilitasBadge: "สิ่งอำนวยความสะดวก", fasilitasTitle: "โครงสร้างพื้นฐานของมัสยิด", fasilitasDesc: "เราจัดเตรียมสิ่งอำนวยความสะดวกที่ดีที่สุดเพื่อความสะดวกสบายในการปฏิบัติศาสนกิจ",
+                    fasilitasAvail: "เปิดให้บริการสำหรับสัปปุรุษ",
+                    keuanganBadge: "ความรับผิดชอบและความไว้วางใจ", keuanganTitle: "รายงานการเงินกองทุนมัสยิด", keuanganDesc: "รายงานทางการเงินได้รับการปรับปรุงเป็นประจำเพื่อแสดงความโปร่งใสต่อชุมชน",
+                    kontakBadge: "ติดต่อเรา", kontakTitle: "สำนักงานเลขาธิการ & บริการสัปปุรุษ",
+                    kontakDesc: "มีคำถามเกี่ยวกับตารางบรรยาย การจองห้องโถง บริการรถพยาบาล หรือคำปรึกษาเรื่องซะกาต? ติดต่อเราด้านล่างนี้",
+                    addressLabel: "ที่อยู่เต็ม", waLabel: "WhatsApp มัสยิด", emailLabel: "อีเมลอย่างเป็นทางการ"
+                },
+                finance: {
+                    saldoTitle: "ยอดคงเหลือสุทธิกองทุนปัจจุบัน", saldoSub: "อัปเดตล่าสุดวันนี้",
+                    masukTitle: "รายรับรวมเดือนนี้", masukSub: "เงินบริจาค & วากัฟจากสัปปุรุษ",
+                    keluarTitle: "รายจ่ายรวมเดือนนี้", keluarSub: "ค่าดำเนินการ & สังคม",
+                    tableTitle: "รายการธุรกรรมทางการเงินล่าสุด", tableSub: "ความโปร่งใส DKM Al-Ikhlas",
+                    thTanggal: "วันที่", thKeterangan: "รายละเอียดธุรกรรม", thKategori: "หมวดหมู่", thNominal: "จำนวนเงิน (Rp)", thAksi: "การกระทำ"
+                },
+                toastMsg: "เปลี่ยนภาษาเป็นภาษาไทยแล้ว"
+            },
+            ms: {
+                dir: 'ltr',
+                annBadge: 'PENGUMUMAN MASJID:',
+                annEdit: 'Sunting',
+                annText: "Selamat datang ke laman web rasmi Masjid Jami' Al-Ikhlas. Sertai solat berjemaah dan kuliah agama mingguan kami. Derma digital melalui QRIS dan pindahan bank BSI.",
+                devText: "Aplikasi ini dicipta oleh simple Program, emel: rokhmatullohbanten@gmail.com, WA: 085946982520. Sumbangan ikhlas untuk pembangunan web ke akaun BSI: 1406197774 (Rokhmatulloh).",
+                devBadge: "Info Pembangun",
+                nav: { beranda: 'Utama', jadwal: 'Waktu Solat', kajian: 'Kuliah & Acara', galeri: 'Galeri & Folder', profil: 'Profil Masjid', fasilitas: 'Kemudahan', keuangan: 'Kewangan', kontak: 'Hubungi' },
+                btns: {
+                    guide: 'Panduan', editText: 'Sunting Teks', logo: 'Tukar Logo', infaq: 'Infaq Digital',
+                    editJadwal: 'Cari Lokasi / Sunting Waktu', editKontak: 'Sunting Kontak & Alamat',
+                    manageFolder: 'Urus Folder', uploadPhoto: 'Muat Naik Foto', editProfile: 'Sunting Profil Masjid',
+                    editFasilitas: 'Tambah / Sunting Kemudahan', inputKas: 'Tambah / Sunting Transaksi', dlTemplate: 'Muat Turun Templat',
+                    ulTemplate: 'Muat Naik Templat', printPdf: 'Cetak PDF', sendReport: 'Kongsi Laporan'
+                },
+                hero: {
+                    badge: "Selamat Datang ke Portal Rasmi DKM Masjid",
+                    title: "Pusat Ibadah, Dakwah & <span class=\"text-gold-400\">Pemberdayaan Ummah</span>",
+                    subtitle: "Memperkasa kemakmuran masjid melalui perkhidmatan jemaah yang optimum, ketelusan kewangan, kuliah rutin yang mencerahkan dan program kebajikan sosial.",
+                    btn1: 'Lihat Waktu Solat',
+                    btn2: 'Jadual Kuliah',
+                    saldoLabel: "Baki Kewangan Masjid Aktif",
+                    liveBadge: "Undur Masa Langsung",
+                    nextPrayerLabel: "Waktu Solat Seterusnya",
+                    countdownLabel: "Masa Menuju Waktu Solat",
+                    khatibLabel: "Khatib Solat Jumaat:",
+                    imamLabel: "Imam Rawatib Hari Ini:"
+                },
+                stats: {
+                    jamaah: "Jemaah Aktif", kajianVal: "24 Kuliah", kajian: "Agenda Bulanan",
+                    santriVal: "140 Pelajar", santri: "Pelajar TPA Al-Ikhlas", yatimVal: "85 Keluarga", yatim: "Penerima Bantuan"
+                },
+                prayers: { imsak: 'Imsak', subuh: 'Subuh', dzuhur: 'Zohor', ashar: 'Asar', maghrib: 'Maghrib', isya: 'Isyak', activeBadge: 'Seterusnya' },
+                filters: { all: 'Semua', rutin: 'Kuliah Rutin', tahsin: 'Tahsin & TPA', sosial: 'Kebajikan Ummah', allFolder: 'Semua Folder' },
+                sections: {
+                    jadwalBadge: "Waktu Ibadah Harian", jadwalTitle: "Jadwal Solat & Imsakiyah", jadwalDesc: "Waktu solat tepat untuk wilayah",
+                    kajianBadge: "Syiar Islam", kajianTitle: "Jadual Kuliah & Agenda Masjid", kajianDesc: "Sertai majlis ilmu untuk menambah kefahaman Islam kita.",
+                    galeriBadge: "Arkib & Dokumentasi", galeriTitle: "Galeri Foto & Folder Aktiviti", galeriDesc: "Dokumentasi aktiviti masjid, pembangunan dan majlis yang disusun dalam folder.",
+                    profilBadge: "Tentang Kami", profilTitle: "Profil & Kepengurusan DKM",
+                    visionLabel: "Visi Utama", missionLabel: "Misi Kami", boardTitle: "Ahli Jawatankuasa Masjid",
+                    fasilitasBadge: "Kemudahan Jemaah", fasilitasTitle: "Infrastruktur & Kemudahan Masjid", fasilitasDesc: "Kami menyediakan kemudahan terbaik untuk keselesaan ibadah jemaah.",
+                    fasilitasAvail: "Tersedia untuk Jemaah",
+                    keuanganBadge: "Akauntabiliti & Amanah", keuanganTitle: "Laporan Telus Kewangan Tabung Masjid", keuanganDesc: "Laporan kewangan dikemas kini secara berkala sebagai lambang amanah kepada ummah.",
+                    kontakBadge: "Hubungi Kami", kontakTitle: "Sekretariat & Perkhidmatan Jemaah",
+                    kontakDesc: "Ada pertanyaan mengenai jadual kuliah, tempahan dewan, perkhidmatan ambulan atau zakat? Sila hubungi kami di bawah.",
+                    addressLabel: "Alamat Penuh", waLabel: "WhatsApp Masjid", emailLabel: "Emel Rasmi"
+                },
+                finance: {
+                    saldoTitle: "Jumlah Baki Kewangan Aktif", saldoSub: "Kemas kini terakhir hari ini",
+                    masukTitle: "Jumlah Pendapatan Bulan Ini", masukSub: "Infaq & Wakaf Jemaah",
+                    keluarTitle: "Jumlah Perbelanjaan Bulan Ini", keluarSub: "Operasi & Kebajikan",
+                    tableTitle: "Transaksi Kewangan Terkini", tableSub: "Ketelusan DKM Al-Ikhlas",
+                    thTanggal: "Tarikh", thKeterangan: "Keterangan Transaksi", thKategori: "Kategori", thNominal: "Jumlah (Rp)", thAksi: "Tindakan"
+                },
+                toastMsg: "Bahasa ditukar kepada Bahasa Melayu."
+            }
+        };
+
+        let currentLang = 'id';
+
+        function changeLanguage(lang, showNotification = true) {
+            currentLang = translations[lang] ? lang : 'id';
+            const t = translations[currentLang];
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = t.dir;
+            localStorage.setItem('masjid_custom_lang', currentLang);
+
+            const selector = document.getElementById('language-selector');
+            if (selector) selector.value = currentLang;
+
+            // Update Announcement Bar & Developer Marquees
+            const annBadge = document.getElementById('ann-badge-label');
+            const annEdit = document.getElementById('ann-edit-label');
+            const annMarquee = document.getElementById('running-announcement-text');
+            const topDevMarquee = document.getElementById('top-developer-marquee');
+            const bottomDevMarquee = document.getElementById('bottom-developer-marquee');
+            const devInfoBadge = document.getElementById('dev-info-badge');
+
+            if (annBadge) annBadge.textContent = t.annBadge;
+            if (annEdit) annEdit.textContent = t.annEdit;
+            if (annMarquee && !localStorage.getItem('masjid_custom_announcement')) {
+                annMarquee.textContent = t.annText;
+            }
+            if (topDevMarquee) topDevMarquee.textContent = t.devText;
+            if (bottomDevMarquee) bottomDevMarquee.textContent = t.devText;
+            if (devInfoBadge) devInfoBadge.innerHTML = `<i class="fa-solid fa-code mr-1"></i> ${t.devBadge}`;
+
+            // Update Nav & Mobile Menu
+            const navMap = {
+                'nav-beranda': t.nav.beranda, 'nav-jadwal': t.nav.jadwal, 'nav-kajian': t.nav.kajian,
+                'nav-galeri': t.nav.galeri, 'nav-profil': t.nav.profil, 'nav-fasilitas': t.nav.fasilitas,
+                'nav-keuangan': t.nav.keuangan, 'nav-kontak': t.nav.kontak
+            };
+            Object.entries(navMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            const mobileLinks = document.querySelectorAll('#mobile-menu .mobile-link');
+            const navValues = [t.nav.beranda, t.nav.jadwal, t.nav.kajian, t.nav.galeri, t.nav.profil, t.nav.fasilitas, t.nav.keuangan, t.nav.kontak];
+            mobileLinks.forEach((link, idx) => {
+                if (navValues[idx]) link.textContent = navValues[idx];
+            });
+
+            // Update Action Buttons
+            const btnMap = {
+                'btn-guide-label': t.btns.guide,
+                'btn-edit-text-label': t.btns.editText,
+                'btn-logo-label': t.btns.logo,
+                'btn-infaq-label': t.btns.infaq,
+                'btn-edit-jadwal': t.btns.editJadwal,
+                'btn-edit-kontak': t.btns.editKontak,
+                'btn-manage-folder': t.btns.manageFolder,
+                'btn-upload-photo': t.btns.uploadPhoto,
+                'btn-edit-profile': t.btns.editProfile,
+                'btn-edit-fasilitas': t.btns.editFasilitas,
+                'btn-input-kas': t.btns.inputKas,
+                'btn-dl-template': t.btns.dlTemplate,
+                'btn-ul-template': t.btns.ulTemplate,
+                'btn-print-pdf': t.btns.printPdf,
+                'btn-send-report': t.btns.sendReport
+            };
+            Object.entries(btnMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            // Update Hero Texts
+            const hasCustomHero = localStorage.getItem('masjid_custom_dashboard_texts');
+            if (!hasCustomHero) {
+                document.getElementById('hero-badge-text').textContent = t.hero.badge;
+                document.getElementById('hero-title-text').innerHTML = t.hero.title;
+                document.getElementById('hero-subtitle-text').textContent = t.hero.subtitle;
+                const b1 = document.getElementById('hero-btn-schedule');
+                const b2 = document.getElementById('hero-btn-kajian');
+                if (b1) b1.innerHTML = `<i class="fa-regular fa-clock"></i> ${t.hero.btn1}`;
+                if (b2) b2.innerHTML = `<i class="fa-solid fa-book-quran"></i> ${t.hero.btn2}`;
+            }
+
+            document.getElementById('hero-saldo-label').textContent = t.hero.saldoLabel;
+            document.getElementById('widget-live-badge').textContent = t.hero.liveBadge;
+            document.getElementById('widget-next-prayer-label').textContent = t.hero.nextPrayerLabel;
+            document.getElementById('widget-countdown-label').textContent = t.hero.countdownLabel;
+            const khatibEl = document.getElementById('widget-khatib-label');
+            const imamEl = document.getElementById('widget-imam-label');
+            if (khatibEl) khatibEl.textContent = t.hero.khatibLabel;
+            if (imamEl) imamEl.textContent = t.hero.imamLabel;
+
+            // Update Quick Stats
+            const statMap = {
+                'stat-jamaah-label': t.stats.jamaah,
+                'stat-kajian-val': t.stats.kajianVal,
+                'stat-kajian-label': t.stats.kajian,
+                'stat-santri-val': t.stats.santriVal,
+                'stat-santri-label': t.stats.santri,
+                'stat-yatim-val': t.stats.yatimVal,
+                'stat-yatim-label': t.stats.yatim
+            };
+            Object.entries(statMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            // Update Kajian Filter Buttons
+            const filterMap = {
+                'filter-kajian-all': t.filters.all,
+                'filter-kajian-rutin': t.filters.rutin,
+                'filter-kajian-tahsin': t.filters.tahsin,
+                'filter-kajian-sosial': t.filters.sosial
+            };
+            Object.entries(filterMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            // Update Section Headings & Labels
+            const secMap = {
+                'sec-jadwal-badge': t.sections.jadwalBadge, 'sec-jadwal-title': t.sections.jadwalTitle, 'sec-jadwal-desc': t.sections.jadwalDesc,
+                'sec-kajian-badge': t.sections.kajianBadge, 'sec-kajian-title': t.sections.kajianTitle, 'sec-kajian-desc': t.sections.kajianDesc,
+                'sec-galeri-badge': t.sections.galeriBadge, 'sec-galeri-title': t.sections.galeriTitle, 'sec-galeri-desc': t.sections.galeriDesc,
+                'sec-profil-badge': t.sections.profilBadge, 'sec-profil-title': t.sections.profilTitle,
+                'profile-vision-label': t.sections.visionLabel, 'profile-mission-label': t.sections.missionLabel, 'profile-board-title': t.sections.boardTitle,
+                'sec-fasilitas-badge': t.sections.fasilitasBadge, 'sec-fasilitas-title': t.sections.fasilitasTitle, 'sec-fasilitas-desc': t.sections.fasilitasDesc,
+                'sec-keuangan-badge': t.sections.keuanganBadge, 'sec-keuangan-title': t.sections.keuanganTitle, 'sec-keuangan-desc': t.sections.keuanganDesc,
+                'sec-kontak-badge': t.sections.kontakBadge, 'sec-kontak-title': t.sections.kontakTitle,
+                'kontak-address-label': t.sections.addressLabel, 'kontak-wa-label': t.sections.waLabel, 'kontak-email-label': t.sections.emailLabel
+            };
+            Object.entries(secMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            if (!localStorage.getItem('masjid_custom_kontak')) {
+                const kontakDesc = document.getElementById('kontak-desc-text');
+                if (kontakDesc) kontakDesc.textContent = t.sections.kontakDesc;
+            }
+
+            // Update Finance Labels & Table Headers
+            const finMap = {
+                'card-saldo-title': t.finance.saldoTitle, 'card-saldo-sub': t.finance.saldoSub,
+                'card-masuk-title': t.finance.masukTitle,
+                'card-keluar-title': t.finance.keluarTitle,
+                'table-mutasi-title': t.finance.tableTitle, 'table-mutasi-sub': t.finance.tableSub,
+                'th-tanggal': t.finance.thTanggal, 'th-keterangan': t.finance.thKeterangan,
+                'th-kategori': t.finance.thKategori, 'th-nominal': t.finance.thNominal, 'th-aksi': t.finance.thAksi
+            };
+            Object.entries(finMap).forEach(([id, text]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+
+            const masukSub = document.getElementById('card-masuk-sub');
+            const keluarSub = document.getElementById('card-keluar-sub');
+            if (masukSub) masukSub.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> ${t.finance.masukSub}`;
+            if (keluarSub) keluarSub.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${t.finance.keluarSub}`;
+
+            // Re-render dynamic blocks so prayer names, folder tabs, and facility badges update
+            const activePrayerId = updateDateTimeAndPrayer();
+            renderPrayerSchedule(activePrayerId);
+            renderGalleryFoldersBar();
+            renderFasilitas();
+
+            if (showNotification) {
+                showToast(t.toastMsg);
+            }
+        }
+
+        function resetQrisDefault() {
+            tempQrisDataUrl = null;
+            bankData = JSON.parse(JSON.stringify(defaultBankData));
+            localStorage.removeItem('masjid_custom_bank');
+            localStorage.removeItem('masjid_custom_qris');
+            applyBankAndQrisToUI();
+            closeQrisSettingsModal();
+            showToast('QRIS dan rekening bank dikembalikan ke default.');
+        }
+
+        // Logo Modal & Identity Controls
+        let tempLogoDataUrl = null;
+        let tempKopLogoDataUrl = null;
+
+        function openLogoModal() {
+            const modal = document.getElementById('logo-modal');
+            const currentName = document.getElementById('navbar-mosque-name').textContent;
+            const currentSub = document.getElementById('navbar-mosque-sub').textContent;
+            document.getElementById('input-mosque-name').value = currentName;
+            document.getElementById('input-mosque-sub').value = currentSub;
+
+            const savedLogo = tempLogoDataUrl || localStorage.getItem('masjid_custom_logo');
+            const prevImg = document.getElementById('preview-logo-img');
+            const prevIcon = document.getElementById('preview-logo-icon');
+
+            if (savedLogo) {
+                prevImg.src = savedLogo;
+                prevImg.classList.remove('hidden');
+                prevIcon.classList.add('hidden');
+            } else {
+                prevImg.classList.add('hidden');
+                prevIcon.classList.remove('hidden');
+            }
+
+            const savedKopLogo = tempKopLogoDataUrl || localStorage.getItem('masjid_custom_kop_logo');
+            const prevKopImg = document.getElementById('preview-kop-logo-img');
+            const prevKopIcon = document.getElementById('preview-kop-logo-icon');
+
+            if (savedKopLogo) {
+                prevKopImg.src = savedKopLogo;
+                prevKopImg.classList.remove('hidden');
+                prevKopIcon.classList.add('hidden');
+            } else {
+                prevKopImg.classList.add('hidden');
+                prevKopIcon.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLogoModal() {
+            const modal = document.getElementById('logo-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Announcement Modal Controls
+        function openAnnouncementModal() {
+            const modal = document.getElementById('announcement-modal');
+            document.getElementById('input-announcement-text').value = currentAnnouncementText;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAnnouncementModal() {
+            const modal = document.getElementById('announcement-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function resetAnnouncementDefault() {
+            currentAnnouncementText = defaultAnnouncementText;
+            localStorage.removeItem('masjid_custom_announcement');
+            document.getElementById('running-announcement-text').textContent = currentAnnouncementText;
+            closeAnnouncementModal();
+            showToast('Pengumuman dikembalikan ke teks default.');
+        }
+
+        // Dashboard Text Modal Controls
+        function openDashboardTextModal() {
+            const modal = document.getElementById('dashboard-text-modal');
+            document.getElementById('input-hero-badge').value = dashboardTexts.badge;
+            document.getElementById('input-hero-title').value = dashboardTexts.title;
+            document.getElementById('input-hero-subtitle').value = dashboardTexts.subtitle;
+            document.getElementById('input-hero-btn1').value = dashboardTexts.btn1;
+            document.getElementById('input-hero-btn2').value = dashboardTexts.btn2;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDashboardTextModal() {
+            const modal = document.getElementById('dashboard-text-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function applyDashboardTextsToUI(texts) {
+            document.getElementById('hero-badge-text').textContent = texts.badge;
+            document.getElementById('hero-title-text').innerHTML = texts.title;
+            document.getElementById('hero-subtitle-text').textContent = texts.subtitle;
+
+            const btn1 = document.getElementById('hero-btn-schedule');
+            const btn2 = document.getElementById('hero-btn-kajian');
+            if (btn1) btn1.innerHTML = `<i class="fa-regular fa-clock"></i> ${texts.btn1}`;
+            if (btn2) btn2.innerHTML = `<i class="fa-solid fa-book-quran"></i> ${texts.btn2}`;
+        }
+
+        function resetDashboardTextDefault() {
+            dashboardTexts = JSON.parse(JSON.stringify(defaultDashboardTexts));
+            localStorage.removeItem('masjid_custom_dashboard_texts');
+            applyDashboardTextsToUI(dashboardTexts);
+            closeDashboardTextModal();
+            showToast('Kalimat dashboard dikembalikan ke default.');
+        }
+
+        function applyLogoToUI(logoUrl, name, sub) {
+            const navImg = document.getElementById('navbar-logo-img');
+            const navIcon = document.getElementById('navbar-logo-icon');
+            const footImg = document.getElementById('footer-logo-img');
+            const footIcon = document.getElementById('footer-logo-icon');
+
+            if (logoUrl) {
+                if (navImg) { navImg.src = logoUrl; navImg.classList.remove('hidden'); }
+                if (navIcon) { navIcon.classList.add('hidden'); }
+
+                if (footImg) { footImg.src = logoUrl; footImg.classList.remove('hidden'); }
+                if (footIcon) { footIcon.classList.add('hidden'); }
+            } else {
+                if (navImg) { navImg.classList.add('hidden'); }
+                if (navIcon) { navIcon.classList.remove('hidden'); }
+
+                if (footImg) { footImg.classList.add('hidden'); }
+                if (footIcon) { footIcon.classList.remove('hidden'); }
+            }
+
+            if (name) {
+                const nameEl = document.getElementById('navbar-mosque-name');
+                const footNameEl = document.getElementById('footer-mosque-name');
+                if (nameEl) nameEl.textContent = name;
+                if (footNameEl) footNameEl.textContent = name.toUpperCase();
+            }
+            if (sub) {
+                const subEl = document.getElementById('navbar-mosque-sub');
+                if (subEl) subEl.textContent = sub;
+            }
+        }
+
+        function resetLogoDefault() {
+            tempLogoDataUrl = null;
+            tempKopLogoDataUrl = null;
+            localStorage.removeItem('masjid_custom_logo');
+            localStorage.removeItem('masjid_custom_kop_logo');
+            localStorage.removeItem('masjid_custom_name');
+            localStorage.removeItem('masjid_custom_sub');
+            applyLogoToUI(null, "AL-IKHLAS", "Masjid Jami' & Islamic Center");
+            closeLogoModal();
+            showToast('Logo dan identitas masjid dikembalikan ke default.');
+        }
+
+        // Prayer Schedule & Location Controls
+        function openPrayerModal() {
+            const modal = document.getElementById('prayer-modal');
+            document.getElementById('edit-location-label').value = currentLocationName;
+            prayerTimesData.forEach(p => {
+                const input = document.getElementById(`edit-time-${p.id}`);
+                if (input) input.value = p.time;
+            });
+            document.getElementById('city-search-results').classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePrayerModal() {
+            const modal = document.getElementById('prayer-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function applyLocationAndTimes(locName, newTimes) {
+            currentLocationName = locName;
+            prayerTimesData = newTimes;
+            document.getElementById('topbar-location-text').textContent = locName;
+            document.getElementById('section-location-text').textContent = `${locName} & sekitarnya`;
+            const activeId = updateDateTimeAndPrayer();
+            renderPrayerSchedule(activeId);
+        }
+
+        async function searchCityLocation() {
+            const query = document.getElementById('city-search-input').value.trim();
+            const resultsBox = document.getElementById('city-search-results');
+            const searchBtn = document.getElementById('city-search-btn');
+
+            if (query.length < 3) {
+                showToast('Masukkan minimal 3 huruf nama kota/kabupaten.', true);
+                return;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Mencari...';
+            resultsBox.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">Mencari data wilayah...</div>';
+            resultsBox.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`https://api.myquran.com/v2/sholat/kota/cari/${encodeURIComponent(query)}`);
+                const json = await res.json();
+
+                if (json.status && Array.isArray(json.data) && json.data.length > 0) {
+                    resultsBox.innerHTML = '';
+                    json.data.forEach(city => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'w-full text-left px-3.5 py-2.5 hover:bg-emerald-50 text-slate-800 font-medium text-xs flex items-center justify-between transition';
+                        btn.innerHTML = `<span><i class="fa-solid fa-location-dot text-emerald-600 mr-2"></i>${city.lokasi}</span><span class="text-[11px] text-emerald-700 font-semibold">Pilih</span>`;
+                        btn.onclick = () => fetchPrayerByCityId(city.id, city.lokasi);
+                        resultsBox.appendChild(btn);
+                    });
+                } else {
+                    resultsBox.innerHTML = '<div class="p-3 text-xs text-rose-600 text-center">Kota tidak ditemukan. Coba kata kunci lain.</div>';
+                }
+            } catch (err) {
+                resultsBox.innerHTML = '<div class="p-3 text-xs text-rose-600 text-center">Gagal terhubung ke server jadwal sholat. Gunakan edit manual di bawah.</div>';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Cari';
+            }
+        }
+
+        async function fetchPrayerByCityId(cityId, cityName) {
+            const resultsBox = document.getElementById('city-search-results');
+            resultsBox.innerHTML = '<div class="p-3 text-xs text-emerald-700 font-medium text-center">Mengambil jadwal sholat...</div>';
+
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+
+            try {
+                const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${cityId}/${yyyy}/${mm}/${dd}`);
+                const json = await res.json();
+
+                if (json.status && json.data && json.data.jadwal) {
+                    const j = json.data.jadwal;
+                    const formattedCity = cityName
+                        .toLowerCase()
+                        .replace(/\b\w/g, l => l.toUpperCase());
+
+                    document.getElementById('edit-location-label').value = formattedCity;
+                    document.getElementById('edit-time-imsak').value = j.imsak;
+                    document.getElementById('edit-time-subuh').value = j.subuh;
+                    document.getElementById('edit-time-dzuhur').value = j.dzuhur;
+                    document.getElementById('edit-time-ashar').value = j.ashar;
+                    document.getElementById('edit-time-maghrib').value = j.maghrib;
+                    document.getElementById('edit-time-isya').value = j.isya;
+
+                    resultsBox.classList.add('hidden');
+                    showToast(`Jadwal untuk ${formattedCity} dimuat. Klik "Simpan Jadwal Sholat".`);
+                } else {
+                    resultsBox.innerHTML = '<div class="p-3 text-xs text-rose-600 text-center">Jadwal tidak tersedia untuk tanggal ini.</div>';
+                }
+            } catch (err) {
+                resultsBox.innerHTML = '<div class="p-3 text-xs text-rose-600 text-center">Gagal mengambil data jadwal sholat.</div>';
+            }
+        }
+
+        function resetPrayerDefault() {
+            localStorage.removeItem('masjid_custom_location');
+            localStorage.removeItem('masjid_custom_prayers');
+            const freshDefault = JSON.parse(JSON.stringify(defaultPrayerTimes));
+            applyLocationAndTimes('Serang, Banten', freshDefault);
+            closePrayerModal();
+            showToast('Jadwal sholat dikembalikan ke default (Serang, Banten).');
+        }
+
+        // Kajian & Agenda Controls
+        function saveKajianToStorage() {
+            localStorage.setItem('masjid_custom_kajian', JSON.stringify(kajianData));
+        }
+
+        // Fasilitas Controls
+        function saveFasilitasToStorage() {
+            localStorage.setItem('masjid_custom_fasilitas', JSON.stringify(fasilitasData));
+        }
+
+        // Gallery & Folder Storage Controls
+        function saveGalleryToStorage() {
+            localStorage.setItem('masjid_custom_folders', JSON.stringify(galleryFolders));
+            localStorage.setItem('masjid_custom_photos', JSON.stringify(galleryPhotos));
+        }
+
+        function openPhotoUploadModal() {
+            const modal = document.getElementById('photo-upload-modal');
+            const selectEl = document.getElementById('upload-photo-folder');
+            selectEl.innerHTML = '';
+
+            galleryFolders.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.name;
+                selectEl.appendChild(opt);
+            });
+
+            document.getElementById('photo-upload-form').reset();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePhotoUploadModal() {
+            const modal = document.getElementById('photo-upload-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openFolderManageModal() {
+            const modal = document.getElementById('folder-manage-modal');
+            renderFolderManageList();
+            document.getElementById('folder-create-form').reset();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFolderManageModal() {
+            const modal = document.getElementById('folder-manage-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderFolderManageList() {
+            const container = document.getElementById('folder-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            galleryFolders.forEach((f, idx) => {
+                const count = galleryPhotos.filter(p => p.folderId === f.id).length;
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-folder text-emerald-600"></i>
+                        <span class="font-bold text-slate-800">${f.name}</span>
+                        <span class="text-[10px] text-slate-400 bg-slate-200/80 px-2 py-0.5 rounded-md">${count} foto</span>
+                    </div>
+                    ${galleryFolders.length > 1 ? `
+                        <button type="button" onclick="deleteFolder('${f.id}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition" title="Hapus Folder">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    ` : '<span class="text-[10px] text-slate-400">Default</span>'}
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function deleteFolder(folderId) {
+            if (galleryFolders.length <= 1) {
+                showToast('Minimal harus ada 1 folder dokumentasi.', true);
+                return;
+            }
+            galleryFolders = galleryFolders.filter(f => f.id !== folderId);
+            galleryPhotos = galleryPhotos.filter(p => p.folderId !== folderId);
+            if (activeGalleryFolder === folderId) activeGalleryFolder = 'all';
+
+            saveGalleryToStorage();
+            renderGalleryFoldersBar();
+            renderGalleryGrid(activeGalleryFolder);
+            renderFolderManageList();
+            showToast('Folder dokumentasi berhasil dihapus.');
+        }
+
+        function renderGalleryFoldersBar() {
+            const bar = document.getElementById('gallery-folders-bar');
+            if (!bar) return;
+            bar.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            allBtn.type = 'button';
+            allBtn.className = activeGalleryFolder === 'all'
+                ? 'px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white shadow-sm transition'
+                : 'px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-700 hover:bg-emerald-50 border border-slate-200 transition';
+            allBtn.textContent = (translations[currentLang] || translations.id).filters.allFolder;
+            allBtn.onclick = () => {
+                activeGalleryFolder = 'all';
+                renderGalleryFoldersBar();
+                renderGalleryGrid('all');
+            };
+            bar.appendChild(allBtn);
+
+            galleryFolders.forEach(f => {
+                const isAct = activeGalleryFolder === f.id;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = isAct
+                    ? 'px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-700 text-white shadow-sm transition flex items-center gap-1.5'
+                    : 'px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-700 hover:bg-emerald-50 border border-slate-200 transition flex items-center gap-1.5';
+                btn.innerHTML = `<i class="fa-solid fa-folder text-xs"></i> ${f.name}`;
+                btn.onclick = () => {
+                    activeGalleryFolder = f.id;
+                    renderGalleryFoldersBar();
+                    renderGalleryGrid(f.id);
+                };
+                bar.appendChild(btn);
+            });
+        }
+
+        function renderGalleryGrid(folderId = 'all') {
+            const grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = folderId === 'all'
+                ? galleryPhotos
+                : galleryPhotos.filter(p => p.folderId === folderId);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-200">
+                        <i class="fa-regular fa-images text-4xl text-slate-300 mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-600">Belum ada foto dokumentasi di folder ini.</p>
+                        <button type="button" onclick="openPhotoUploadModal()" class="mt-3 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition">Unggah Foto Sekarang</button>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(photo => {
+                const folderObj = galleryFolders.find(f => f.id === photo.folderId);
+                const folderName = folderObj ? folderObj.name : 'Umum';
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between group';
+                card.innerHTML = `
+                    <div class="relative h-52 overflow-hidden bg-slate-100">
+                        <img src="${photo.imageUrl}" alt="${photo.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/600x400/064e3b/ffffff?text=Dokumentasi+Masjid'">
+                        <span class="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-950/80 backdrop-blur-xs text-white text-[11px] font-semibold">
+                            <i class="fa-solid fa-folder text-gold-400 mr-1"></i> ${folderName}
+                        </span>
+                    </div>
+                    <div class="p-5 flex flex-col justify-between flex-1">
+                        <div>
+                            <span class="text-[11px] text-slate-400 block mb-1"><i class="fa-regular fa-calendar mr-1"></i> ${photo.date}</span>
+                            <h4 class="font-bold text-slate-900 text-base leading-snug">${photo.title}</h4>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <button type="button" onclick="deletePhoto(${photo.id})" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1" title="Hapus Foto">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                            <span class="text-[11px] text-emerald-700 font-bold">DKM Al-Ikhlas</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function deletePhoto(photoId) {
+            galleryPhotos = galleryPhotos.filter(p => p.id !== photoId);
+            saveGalleryToStorage();
+            renderGalleryGrid(activeGalleryFolder);
+            renderFolderManageList();
+            showToast('Foto dokumentasi berhasil dihapus.');
+        }
+
+        function openFasilitasModal(index = -1) {
+            const modal = document.getElementById('fasilitas-modal');
+            const titleEl = document.getElementById('fasilitas-modal-title');
+            const deleteBtn = document.getElementById('delete-fasilitas-btn');
+
+            document.getElementById('edit-fasilitas-index').value = index;
+
+            if (index >= 0 && index < fasilitasData.length) {
+                const item = fasilitasData[index];
+                titleEl.textContent = 'Edit Fasilitas Masjid';
+                document.getElementById('edit-fasilitas-title').value = item.title;
+                document.getElementById('edit-fasilitas-icon').value = item.icon;
+                document.getElementById('edit-fasilitas-desc').value = item.desc;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                titleEl.textContent = 'Tambah Fasilitas Baru';
+                document.getElementById('fasilitas-edit-form').reset();
+                document.getElementById('edit-fasilitas-index').value = '-1';
+                deleteBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFasilitasModal() {
+            const modal = document.getElementById('fasilitas-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function deleteCurrentFasilitas() {
+            const idx = parseInt(document.getElementById('edit-fasilitas-index').value, 10);
+            if (idx >= 0 && idx < fasilitasData.length) {
+                fasilitasData.splice(idx, 1);
+                saveFasilitasToStorage();
+                renderFasilitas();
+                closeFasilitasModal();
+                showToast('Fasilitas berhasil dihapus.');
+            }
+        }
+
+        function renderFasilitas() {
+            const grid = document.getElementById('fasilitas-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            fasilitasData.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between group relative';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                                <i class="fa-solid ${item.icon}"></i>
+                            </div>
+                            <button type="button" onclick="openFasilitasModal(${idx})" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition" title="Edit Fasilitas">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-lg mb-2">${item.title}</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">${item.desc}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> ${(translations[currentLang] || translations.id).sections.fasilitasAvail}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Finance Transactions Controls
+        function saveFinanceToStorage() {
+            localStorage.setItem('masjid_custom_finance_tx', JSON.stringify(financeTransactions));
+            localStorage.setItem('masjid_custom_base_saldo', baseSaldoKas);
+        }
+
+        function openFinanceModal(index = -1) {
+            const modal = document.getElementById('finance-modal');
+            const titleEl = document.getElementById('finance-modal-title');
+            const deleteBtn = document.getElementById('delete-tx-btn');
+            document.getElementById('edit-base-saldo').value = baseSaldoKas;
+
+            document.getElementById('edit-tx-index').value = index;
+
+            if (index >= 0 && index < financeTransactions.length) {
+                const tx = financeTransactions[index];
+                titleEl.textContent = 'Edit Transaksi Kas';
+                document.getElementById('edit-tx-type').value = tx.type;
+                document.getElementById('edit-tx-date').value = tx.date;
+                document.getElementById('edit-tx-desc').value = tx.desc;
+                document.getElementById('edit-tx-category').value = tx.category;
+                document.getElementById('edit-tx-amount').value = tx.amount;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                titleEl.textContent = 'Tambah Transaksi Baru';
+                document.getElementById('finance-edit-form').reset();
+                document.getElementById('edit-tx-date').value = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                document.getElementById('edit-tx-index').value = '-1';
+                deleteBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFinanceModal() {
+            const modal = document.getElementById('finance-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function updateBaseSaldo() {
+            const val = parseInt(document.getElementById('edit-base-saldo').value, 10);
+            if (isNaN(val) || val < 0) {
+                showToast('Saldo dasar harus angka valid.', true);
+                return;
+            }
+            baseSaldoKas = val;
+            saveFinanceToStorage();
+            renderFinance();
+            showToast('Saldo dasar kas berhasil diperbarui!');
+        }
+
+        function deleteCurrentTransaction() {
+            const idx = parseInt(document.getElementById('edit-tx-index').value, 10);
+            if (idx >= 0 && idx < financeTransactions.length) {
+                financeTransactions.splice(idx, 1);
+                saveFinanceToStorage();
+                renderFinance();
+                closeFinanceModal();
+                showToast('Transaksi kas berhasil dihapus.');
+            }
+        }
+
+        function resetFinanceDefault() {
+            financeTransactions = JSON.parse(JSON.stringify(defaultFinanceTransactions));
+            baseSaldoKas = defaultBaseSaldo;
+            localStorage.removeItem('masjid_custom_finance_tx');
+            localStorage.removeItem('masjid_custom_base_saldo');
+            renderFinance();
+            closeFinanceModal();
+            showToast('Mutasi kas dikembalikan ke default.');
+        }
+
+        function renderFinance() {
+            let totalIn = 0;
+            let totalOut = 0;
+
+            financeTransactions.forEach(tx => {
+                if (tx.type === 'in') totalIn += tx.amount;
+                else totalOut += tx.amount;
+            });
+
+            const currentSaldo = baseSaldoKas + totalIn - totalOut;
+
+            const totalSaldoEl = document.getElementById('total-saldo');
+            const heroLiveSaldoEl = document.getElementById('hero-live-saldo');
+            const totalMasukEl = document.getElementById('total-masuk');
+            const totalKeluarEl = document.getElementById('total-keluar');
+
+            if (totalSaldoEl) totalSaldoEl.textContent = formatRupiah(currentSaldo);
+            if (heroLiveSaldoEl) heroLiveSaldoEl.textContent = formatRupiah(currentSaldo);
+            if (totalMasukEl) totalMasukEl.textContent = formatRupiah(totalIn);
+            if (totalKeluarEl) totalKeluarEl.textContent = formatRupiah(totalOut);
+
+            const tbody = document.getElementById('finance-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (financeTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">Belum ada transaksi tercatat.</td></tr>`;
+                return;
+            }
+
+            financeTransactions.forEach((tx, idx) => {
+                const isIn = tx.type === 'in';
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-6 font-medium text-slate-600 whitespace-nowrap text-xs">${tx.date}</td>
+                    <td class="py-3.5 px-6 font-bold text-slate-900 text-xs">${tx.desc}</td>
+                    <td class="py-3.5 px-6 whitespace-nowrap text-xs"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${isIn ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">${tx.category}</span></td>
+                    <td class="py-3.5 px-6 text-right font-mono font-bold text-xs ${isIn ? 'text-emerald-700' : 'text-rose-600'}">${isIn ? '+' : '-'}${tx.amount.toLocaleString('id-ID')}</td>
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <button type="button" onclick="openFinanceModal(${idx})" class="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 transition" title="Edit Transaksi">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+<!-- ... --><script>
